@@ -220,6 +220,33 @@
     transform: translateY(0);
     transition-delay: 60ms;
   }
+
+  @media (max-width: 768px) {
+    body {
+      padding: 48px 24px;
+      align-items: flex-start;
+    }
+
+    .section {
+      display: flex;
+      flex-direction: column;
+      min-height: unset;
+      gap: 0;
+    }
+
+    /* Dissolve wrapper so .intro and .accordion participate directly
+       in the flex order alongside .illustration-panel */
+    .content-panel {
+      display: contents;
+    }
+
+    .intro              { order: 1; width: 100%; padding: 0 0 32px; }
+    .illustration-panel { order: 2; max-width: 100%; margin-bottom: 40px; }
+    .accordion          { order: 3; width: 100%; }
+
+    .heading { font-size: 28px; }
+    .subtext  { font-size: 15px; margin-bottom: 0; max-width: 100%; }
+  }
 </style>
 </head>
 <body>
@@ -897,8 +924,10 @@
 
   <!-- Content -->
   <div class="content-panel">
-    <h2 class="heading">Deploy AI anywhere.</h2>
-    <p class="subtext">The same models and agents across cloud, on-premise, and on-device. Inference runs in-region — keeping you within your latency envelope, data residency obligations, and compliance frameworks.</p>
+    <div class="intro">
+      <h2 class="heading">Deploy AI anywhere.</h2>
+      <p class="subtext">The same models and agents across cloud, on-premise, and on-device. Inference runs in-region — keeping you within your latency envelope, data residency obligations, and compliance frameworks.</p>
+    </div>
 
     <div class="accordion">
 
