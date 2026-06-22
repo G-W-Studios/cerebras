@@ -1,0 +1,87 @@
+/* ============================================================
+   CEREBRAS — COLOR TOKENS
+   Sourced from the Website Figma. The brand runs on warm
+   neutrals (near-black ink + cream paper), a single electric
+   orange, and a small set of illustration/label accents.
+   ============================================================ */
+
+:root {
+  /* ---- Core neutrals (warm-grey ramp) ---- */
+  --black: #000000;
+  --ink: #1A1A1A;          /* primary text + dark surfaces (rgb 26,26,26) */
+  --ink-900: #262626;      /* raised dark surface */
+  --grey-800: #333332;     /* (rgb 51,51,50) */
+  --grey-700: #4D4C4B;     /* (rgb 77,76,75) */
+  --grey-600: #5F5E5C;
+  --grey-500: #807E7D;     /* warm secondary text (rgb 128,126,125) */
+  --grey-400: #B3B1AF;     /* (rgb 179,177,175) */
+  --grey-300: #CCCAC8;     /* hairline / disabled (rgb 204,202,200) */
+  --grey-200: #E6E6E6;     /* (rgb 230,230,230) */
+  --grey-100: #F6F6F6;     /* lightest grey fill */
+  --white: #FFFFFF;
+
+  /* ---- Warm paper (signature cream backgrounds) ---- */
+  --paper: #ECE8E4;        /* cream section bg (rgb 236,232,228) */
+  --paper-50: #F7F5F2;     /* page background (rgb 247,245,242) */
+  --paper-25: #FBFAF9;     /* near-white warm (rgb 251,250,249) */
+
+  /* ---- Brand orange ---- */
+  --orange: #F15A29;       /* primary brand (rgb 241,90,41) */
+  --orange-600: #F15A24;   /* solid fill variant (rgb 241,90,36) */
+  --orange-bright: #F74E11;/* hover / active (rgb 247,78,17) */
+  --orange-400: #FD962E;   /* warm light accent (rgb 253,150,46) */
+  --orange-100: #FFE8DF;   /* pale wash (rgb 255,232,223) */
+
+  /* ---- Accent palette (illustrations, labels, charts) ---- */
+  --green: #90D729;        /* signal green (rgb 144,215,41) */
+  --teal-900: #1C3B3E;     /* deep teal (rgb 28,59,62) */
+  --teal-300: #82C7D4;     /* light teal (rgb 130,199,212) */
+  --purple-300: #B086E7;   /* lilac (rgb 176,134,231) */
+  --maroon-900: #5C1A11;   /* deep rust (used in swatch wall) */
+
+  /* ---- Campaign "Display" gradient (socials, event screens, ads) ----
+     Deep-brown base lit by two warm-orange radial glows from the top.
+     This is the signature backdrop for bold uppercase campaign type. */
+  --display-base: #2C0B02;       /* rgb(44,11,2) */
+  --display-glow-1: #F17929;     /* rgb(241,121,41) bright orange */
+  --display-glow-2: #F15429;     /* rgb(241,84,41) red-orange */
+  --gradient-display:
+    radial-gradient(140% 120% at 24% 2%, var(--display-glow-1) 0%, rgba(241,121,41,0) 62%),
+    radial-gradient(115% 100% at 35% -14%, var(--display-glow-2) 0%, rgba(241,84,41,0) 100%),
+    var(--display-base);
+  --gradient-orange: linear-gradient(135deg, var(--orange-400), var(--orange-bright));
+
+  /* ============================================================
+     SEMANTIC ALIASES
+     ============================================================ */
+
+  /* Surfaces */
+  --bg: var(--paper-50);            /* default page background */
+  --bg-cream: var(--paper);         /* alternating cream sections */
+  --surface: var(--white);          /* cards on cream */
+  --surface-raised: var(--white);
+  --surface-dark: var(--ink);       /* dark hero / footer */
+  --surface-darker: var(--black);
+
+  /* Text */
+  --text: var(--ink);               /* high-emphasis */
+  --text-secondary: var(--grey-500);/* warm grey */
+  --text-tertiary: var(--grey-400);
+  --text-on-dark: var(--white);
+  --text-on-dark-dim: rgba(255,255,255,0.64);
+  --text-on-orange: var(--ink);     /* near-black sits on orange */
+  --text-accent: var(--orange);
+
+  /* Lines & borders */
+  --border: rgba(0,0,0,0.12);       /* hairline on light */
+  --border-strong: rgba(0,0,0,0.24);
+  --border-on-dark: rgba(255,255,255,0.14);
+  --divider: var(--grey-200);
+
+  /* Controls */
+  --control-primary: var(--orange);
+  --control-primary-hover: var(--orange-bright);
+  --control-dark: var(--ink);
+  --control-disabled: var(--grey-300);
+  --focus-ring: var(--orange);
+}

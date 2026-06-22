@@ -1,0 +1,53 @@
+<!-- @dsCard group="Components" viewport="700x320" name="Core — buttons, labels, chips" subtitle="Buttons · Labels · Tags · Chips · Badges · Input" -->
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{margin:0;background:var(--bg);padding:24px}
+.sec{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+.h{font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--grey-500);width:100%;margin-bottom:2px}</style></head>
+<body>
+  <div id="r"></div>
+  <script type="text/babel">
+    const { Button, IconButton, Label, Tag, Chip, Badge, Input } = window.CerebrasDesignSystem_0bbfb2;
+    const e = React.createElement;
+    const App = () => {
+      const [sel,setSel] = React.useState("inference");
+      return e(React.Fragment,null,
+        e('div',{className:'sec'},
+          e('div',{className:'h'},'Buttons'),
+          e(Button,{variant:'primary',icon:'arrow-right'},'Get started'),
+          e(Button,{variant:'dark'},'Read the docs'),
+          e(Button,{variant:'outline'},'Learn more'),
+          e(Button,{variant:'ghost'},'Sign in'),
+          e(IconButton,{icon:'search'}),
+          e(IconButton,{icon:'plus',variant:'primary'}),
+        ),
+        e('div',{className:'sec'},
+          e('div',{className:'h'},'Labels'),
+          e(Label,{category:'blog'},'Blog'),
+          e(Label,{category:'news'},'News'),
+          e(Label,{category:'press-release'},'Press Release'),
+          e(Label,{category:'event'},'Event'),
+          e(Label,{category:'whitepaper'},'Whitepaper'),
+          e(Tag,{tone:'orange'},'1,000 tok/s'),
+          e(Tag,{tone:'outline'},'Llama 3.1'),
+        ),
+        e('div',{className:'sec'},
+          e('div',{className:'h'},'Chips & badges'),
+          ["all","inference","training","cloud"].map(c=>e(Chip,{key:c,selected:sel===c,onClick:()=>setSel(c)},c)),
+          e(Badge,{tone:'orange'},'NEW'),
+          e(Badge,{tone:'green'},'LIVE'),
+          e(Badge,{tone:'dark'},'3'),
+        ),
+        e('div',{className:'sec',style:{maxWidth:360}},
+          e('div',{className:'h'},'Input'),
+          e(Input,{icon:'search',placeholder:'Search docs…',wrapStyle:{flex:1}}),
+        ),
+      );
+    };
+    ReactDOM.createRoot(document.getElementById('r')).render(e(App));
+  </script>
+</body></html>

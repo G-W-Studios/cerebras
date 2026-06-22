@@ -1,0 +1,39 @@
+<!-- @dsCard group="Type" viewport="700x430" name="Headings & body — Manrope" subtitle="Desktop type scale: H1–H4, paragraph, label" -->
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css">
+<style>
+  body{margin:0;background:var(--bg);padding:28px;color:var(--ink)}
+  .scale{display:flex;flex-direction:column;gap:20px}
+  .row{display:flex;align-items:baseline;gap:20px}
+  .spec{flex:none;width:150px;font-family:var(--font-mono);font-weight:600;font-size:10px;
+        letter-spacing:var(--ls-mono);text-transform:uppercase;color:var(--grey-500);line-height:1.4}
+  .samp{font-family:var(--font-sans);color:var(--ink);text-wrap:balance}
+</style></head>
+<body>
+  <div class="scale">
+    <div class="row">
+      <div class="spec">H1 · Display<br>Light 300 · 64/0.92 · −.02em · UPPERCASE</div>
+      <div class="samp" style="font-weight:300;font-size:48px;line-height:0.92;letter-spacing:-0.02em;text-transform:uppercase">Instant&nbsp;AI</div>
+    </div>
+    <div class="row">
+      <div class="spec">H2 · Section<br>Regular 400 · 36/1.15 · −.01em</div>
+      <div class="samp" style="font-weight:400;font-size:32px;line-height:1.15;letter-spacing:-0.01em">Build products that others can't</div>
+    </div>
+    <div class="row">
+      <div class="spec">H3 · Sub-heading<br>Regular 400 · 28/1.2 · −.01em</div>
+      <div class="samp" style="font-weight:400;font-size:24px;line-height:1.2;letter-spacing:-0.01em">The fastest model on earth</div>
+    </div>
+    <div class="row">
+      <div class="spec">H4 · Lead<br>Medium 500 · 20/1.4 · −.01em</div>
+      <div class="samp" style="font-weight:500;font-size:18px;line-height:1.4;letter-spacing:-0.01em">Purpose-built silicon, no compromises</div>
+    </div>
+    <div class="row">
+      <div class="spec">Paragraph · Body<br>Medium 500 · 16/1.5 · −.01em</div>
+      <div class="samp" style="font-weight:500;font-size:16px;line-height:1.5;letter-spacing:-0.01em;color:var(--grey-700);max-width:440px">The Cerebras Wafer-Scale Engine is 58× larger than a GPU, designed for builders who want to do extraordinary things.</div>
+    </div>
+    <div class="row">
+      <div class="spec">Label · UI<br>Mono SemiBold 600 · 13 · +.02em</div>
+      <div class="samp" style="font-family:var(--font-mono);font-weight:600;font-size:13px;letter-spacing:0.02em;text-transform:uppercase;color:var(--grey-500)">// Now on Cerebras Inference</div>
+    </div>
+  </div>
+</body></html>
