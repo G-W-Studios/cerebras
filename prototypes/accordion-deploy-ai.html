@@ -44,31 +44,36 @@
     min-height: 540px;
   }
 
+  /* ── Screen-reader only ── */
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+    border: 0;
+  }
+
   /* ── Illustration panel ── */
   .illustration-panel {
     position: relative;
-    height: 480px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 100%;
+    max-width: 420px;
+    /* tall enough for the tallest SVG (dedicated = 264px at max render width) */
+    aspect-ratio: 206 / 264;
   }
 
+  /* All 3 illustrations stacked at exact same position, aligned to bottom */
   .illus {
     position: absolute;
+    bottom: 0;
+    left: 0;
     width: 100%;
-    max-width: 440px;
-    height: auto;
-    transition:
-      opacity var(--dur) var(--ease-out),
-      transform var(--dur) var(--ease-out);
-    opacity: 0;
-    transform: translateY(16px) scale(0.97);
+    transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
     pointer-events: none;
-  }
-
-  .illus.active {
-    opacity: 1;
-    transform: translateY(0) scale(1);
+    opacity: 0;
+    transform: translateY(14px);
   }
 
   .illus svg {
@@ -76,6 +81,11 @@
     height: auto;
     display: block;
   }
+
+  /* Active illustration rises into place; inactive sinks back */
+  body:has(#r-cloud:checked)     #illus-cloud     { opacity: 1; transform: translateY(0); }
+  body:has(#r-dedicated:checked) #illus-dedicated  { opacity: 1; transform: translateY(0); }
+  body:has(#r-onpremise:checked) #illus-onpremise  { opacity: 1; transform: translateY(0); }
 
   /* ── Content panel ── */
   .content-panel {
@@ -150,13 +160,15 @@
     overflow: visible;
   }
 
-  .accordion-item.open .accordion-icon {
+  body:has(#r-cloud:checked) #item-cloud .accordion-icon,
+  body:has(#r-dedicated:checked) #item-dedicated .accordion-icon,
+  body:has(#r-onpremise:checked) #item-onpremise .accordion-icon {
     color: var(--orange);
   }
 
   /* dedicated icon: white dots must stay white even when active */
-  .accordion-item.open .accordion-icon [fill="white"],
-  .accordion-item.open .accordion-icon [fill="#FFFFFF"] {
+  body:has(#r-dedicated:checked) #item-dedicated .accordion-icon [fill="white"],
+  body:has(#r-dedicated:checked) #item-dedicated .accordion-icon [fill="#FFFFFF"] {
     fill: white;
   }
 
@@ -176,7 +188,9 @@
     transition: grid-template-rows var(--dur) var(--ease-out);
   }
 
-  .accordion-item.open .accordion-body {
+  body:has(#r-cloud:checked) #item-cloud .accordion-body,
+  body:has(#r-dedicated:checked) #item-dedicated .accordion-body,
+  body:has(#r-onpremise:checked) #item-onpremise .accordion-body {
     grid-template-rows: 1fr;
   }
 
@@ -199,7 +213,9 @@
       transform var(--dur) var(--ease-out);
   }
 
-  .accordion-item.open .accordion-body-content {
+  body:has(#r-cloud:checked) #item-cloud .accordion-body-content,
+  body:has(#r-dedicated:checked) #item-dedicated .accordion-body-content,
+  body:has(#r-onpremise:checked) #item-onpremise .accordion-body-content {
     opacity: 1;
     transform: translateY(0);
     transition-delay: 60ms;
@@ -207,6 +223,11 @@
 </style>
 </head>
 <body>
+
+<!-- Radio inputs drive all state — no JS needed -->
+<input type="radio" name="deploy" id="r-cloud" class="sr-only" checked>
+<input type="radio" name="deploy" id="r-dedicated" class="sr-only">
+<input type="radio" name="deploy" id="r-onpremise" class="sr-only">
 
 <section class="section">
 
@@ -882,8 +903,8 @@
     <div class="accordion">
 
       <!-- Cloud -->
-      <div class="accordion-item" data-item="cloud">
-        <button class="accordion-trigger" aria-expanded="false" aria-controls="body-cloud">
+      <div class="accordion-item" id="item-cloud">
+        <label class="accordion-trigger" for="r-cloud">
           <span class="accordion-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g id="Home V2 ">
@@ -912,7 +933,7 @@
 </svg>
           </span>
           <span class="accordion-label">Cloud</span>
-        </button>
+        </label>
         <div class="accordion-body" id="body-cloud" role="region">
           <div class="accordion-body-inner">
             <p class="accordion-body-content">Serve open models in seconds, including OpenAI, Qwen, Llama and more with an API key. No infrastructure management — Cerebras handles provisioning, scaling, and uptime.</p>
@@ -921,8 +942,8 @@
       </div>
 
       <!-- Dedicated -->
-      <div class="accordion-item" data-item="dedicated">
-        <button class="accordion-trigger" aria-expanded="false" aria-controls="body-dedicated">
+      <div class="accordion-item" id="item-dedicated">
+        <label class="accordion-trigger" for="r-dedicated">
           <span class="accordion-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g id="Home V2 ">
@@ -958,7 +979,7 @@
 </svg>
           </span>
           <span class="accordion-label">Dedicated</span>
-        </button>
+        </label>
         <div class="accordion-body" id="body-dedicated" role="region">
           <div class="accordion-body-inner">
             <p class="accordion-body-content">Reserved capacity on Cerebras silicon, isolated to your workloads. Predictable throughput and latency for production inference — with no noisy neighbours sharing your compute.</p>
@@ -967,8 +988,8 @@
       </div>
 
       <!-- On-premise -->
-      <div class="accordion-item" data-item="onpremise">
-        <button class="accordion-trigger" aria-expanded="false" aria-controls="body-onpremise">
+      <div class="accordion-item" id="item-onpremise">
+        <label class="accordion-trigger" for="r-onpremise">
           <span class="accordion-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g id="Home V2 ">
@@ -996,7 +1017,7 @@
 </svg>
           </span>
           <span class="accordion-label">On-premise</span>
-        </button>
+        </label>
         <div class="accordion-body" id="body-onpremise" role="region">
           <div class="accordion-body-inner">
             <p class="accordion-body-content">Deploy Cerebras hardware in your data centre. Full data sovereignty, air-gapped operation, and compliance with the strictest residency and security frameworks — at record inference speed.</p>
@@ -1007,39 +1028,6 @@
     </div>
   </div>
 </section>
-
-<script>
-  const items = document.querySelectorAll('.accordion-item');
-  const illustrationMap = {
-    cloud:     document.getElementById('illus-cloud'),
-    dedicated: document.getElementById('illus-dedicated'),
-    onpremise: document.getElementById('illus-onpremise'),
-  };
-
-  function open(item) {
-    const key = item.dataset.item;
-    const trigger = item.querySelector('.accordion-trigger');
-    const wasOpen = item.classList.contains('open');
-
-    items.forEach(i => {
-      i.classList.remove('open');
-      i.querySelector('.accordion-trigger').setAttribute('aria-expanded', 'false');
-    });
-    Object.values(illustrationMap).forEach(el => el.classList.remove('active'));
-
-    if (!wasOpen) {
-      item.classList.add('open');
-      trigger.setAttribute('aria-expanded', 'true');
-      if (illustrationMap[key]) illustrationMap[key].classList.add('active');
-    }
-  }
-
-  items.forEach(item => {
-    item.querySelector('.accordion-trigger').addEventListener('click', () => open(item));
-  });
-
-  open(items[0]);
-</script>
 
 </body>
 </html>
