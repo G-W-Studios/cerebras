@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cerebras — Hero Cover Flow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Sometype+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange: #F15A29;
+      --ink: #1A1A1A;
+      --cream: #F7F5F2;
+      --gray-300: #B3B1AF;
+      --gray-850: #262626;
+      --bg: #0D0907;
+      --card-radius: 14px;
+      --btn-radius: 2px;
+    }
+
+    html, body { min-height: 100%; }
+    body {
+      background: var(--bg);
+      color: #fff;
+      font-family: 'Manrope', sans-serif;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── NAV ─────────────────────────────────────────────────────── */
+    .nav-wrap {
+      position: relative;
+      z-index: 200;
+      height: 108px;
+      background: #fff;
+    }
+    .nav {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 32px 48px;
+    }
+    .nav-logo { width: 105px; height: 44px; object-fit: contain; object-position: left; display: block; }
+    .nav-menu {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      display: flex; align-items: center; gap: 32px; list-style: none;
+    }
+    .nav-menu a {
+      font-family: 'Manrope', sans-serif; font-weight: 600; font-size: 14px;
+      color: var(--ink); text-decoration: none; letter-spacing: -0.02em;
+      transition: color 150ms;
+    }
+    .nav-menu a:hover { color: var(--orange); }
+    .nav-actions { display: flex; gap: 8px; align-items: center; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      height: 44px; padding: 0 20px; border-radius: var(--btn-radius);
+      border: none; cursor: pointer;
+      font-family: 'Sometype Mono', monospace; font-weight: 600;
+      font-size: 13px; letter-spacing: 0.02em; text-transform: uppercase;
+      text-decoration: none; transition: opacity 150ms;
+    }
+    .btn-gray { background: #ECE8E4; color: var(--ink); padding: 0 16px; }
+    .btn-dark { background: var(--ink); color: #fff; }
+    .btn-gradient {
+      background: linear-gradient(135deg, #FFD84D 0%, #FF9020 45%, #FB490F 100%);
+      color: var(--ink);
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-gradient::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, #FFD84D 0%, #FF9020 50%, #FB490F 100%);
+      opacity: 0;
+      transition: opacity 500ms cubic-bezier(0.16,1,0.3,1);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .btn-gradient:hover::after { opacity: 1; }
+    .btn-label { position: relative; z-index: 1; }
+
+    /* ─── HERO SECTION ────────────────────────────────────────────── */
+    .hero-section {
+      background: var(--bg);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 72px 0 40px;
+      position: relative;
+    }
+
+    /* ─── COVER FLOW STAGE ───────────────────────────────────────── */
+    .cflow-clip {
+      width: 100%;
+      height: 620px;
+      overflow: hidden;
+    }
+    .cflow-stage {
+      width: 100%;
+      height: 100%;
+      perspective: 1400px;
+      perspective-origin: 50% 50%;
+      cursor: grab;
+      user-select: none;
+      -webkit-user-select: none;
+      position: relative;
+    }
+    .cflow-stage:active { cursor: grabbing; }
+
+    .cflow-inner {
+      position: relative;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    /* ─── CARDS ───────────────────────────────────────────────────── */
+    .card {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: min(72vw, 1040px);
+      height: 100%;
+      border-radius: var(--card-radius);
+      overflow: hidden;
+      transform-origin: center center;
+      /* transition controlled per-card in JS via style.transition */
+      will-change: transform, opacity;
+      /* default: hidden offscreen */
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* card backgrounds */
+    .card-bg {
+      position: absolute; inset: 0;
+    }
+    .card-bg video, .card-bg img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center;
+      display: block;
+    }
+
+    /* overlays */
+    .card-overlay {
+      position: absolute; inset: 0; pointer-events: none;
+    }
+    .card-glow {
+      position: absolute;
+      width: 826px; height: 326px;
+      left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      background: radial-gradient(ellipse at center, rgba(241,90,41,0.18) 0%, transparent 70%);
+    }
+
+    /* ─── SLIDE 1 CONTENT: centered ──────────────────────────────── */
+    .card-center-body {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 32px; padding: 44px; z-index: 5;
+    }
+    .card-headline {
+      font-family: 'Manrope', sans-serif; font-weight: 400;
+      font-size: 48px; line-height: 0.92; letter-spacing: -0.02em;
+      text-align: center; color: #fff;
+    }
+    .card-headline .hi {
+      background: linear-gradient(90deg, #FFCE5C 24.5%, #F76D32 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .card-sub {
+      font-family: 'Manrope', sans-serif; font-weight: 500;
+      font-size: 16px; line-height: 1.3; letter-spacing: -0.01em;
+      text-align: center; color: rgba(255,255,255,0.9);
+      max-width: 489px;
+    }
+    .card-ctas {
+      display: flex; gap: 12px; align-items: center; justify-content: center;
+    }
+    .cta-white {
+      display: inline-flex; align-items: center; justify-content: center;
+      height: 44px; padding: 0 20px;
+      background: #fff; color: var(--ink);
+      border-radius: var(--btn-radius);
+      font-family: 'Sometype Mono', monospace; font-weight: 600;
+      font-size: 13px; letter-spacing: 0.02em; text-transform: uppercase;
+      text-decoration: none; border: none; cursor: pointer;
+      transition: background 150ms ease;
+    }
+    .cta-white:hover { background: #eee; }
+    .cta-glass {
+      display: inline-flex; align-items: center; justify-content: center;
+      height: 44px; padding: 0 20px;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(3.5px);
+      color: #fff;
+      border-radius: var(--btn-radius);
+      font-family: 'Sometype Mono', monospace; font-weight: 600;
+      font-size: 13px; letter-spacing: 0.02em; text-transform: uppercase;
+      text-decoration: none; border: none; cursor: pointer;
+      transition: background 150ms ease;
+    }
+    .cta-glass:hover { background: rgba(255,255,255,0.25); }
+
+    /* ─── SLIDE 2+ CONTENT: top-left ─────────────────────────────── */
+    .card-topleft-body {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: flex-start; justify-content: flex-start;
+      gap: 20px; padding: 38px; z-index: 5; max-width: 478px;
+    }
+    .card-h2 {
+      font-family: 'Manrope', sans-serif; font-weight: 400;
+      font-size: 30px; line-height: 1.1; letter-spacing: -0.02em; color: #fff;
+    }
+    .card-p {
+      font-family: 'Manrope', sans-serif; font-weight: 500;
+      font-size: 16px; line-height: 1.3; letter-spacing: -0.01em;
+      color: rgba(255,255,255,0.9);
+    }
+    .cta-outline {
+      display: inline-flex; align-items: center; justify-content: center;
+      height: auto; padding: 10px 14px;
+      background: transparent; color: #fff;
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: var(--btn-radius);
+      font-family: 'Sometype Mono', monospace; font-weight: 600;
+      font-size: 13px; letter-spacing: 0.02em; text-transform: uppercase;
+      text-decoration: none; cursor: pointer;
+      transition: border-color 150ms ease, background 150ms ease;
+    }
+    .cta-outline:hover { border-color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.06); }
+
+    /* ─── CARD CONTENT ANIMATION ─────────────────────────────────── */
+    /* Text starts hidden; JS scramble-reveal takes over on activation */
+    .card-headline, .card-sub, .card-ctas,
+    .card-h2, .card-p, .cta-outline {
+      opacity: 0;
+    }
+    /* CTA container fades in simply (buttons inside have their own scramble on hover) */
+    .card-ctas {
+      transition: opacity 400ms ease;
+    }
+
+    /* ─── CONTROLS ROW ────────────────────────────────────────────── */
+    .controls-row {
+      width: min(72vw, 1040px);
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 28px;
+    }
+    .explore-label {
+      font-family: 'Manrope', sans-serif; font-weight: 500;
+      font-size: 16px; letter-spacing: -0.01em;
+      color: var(--gray-300);
+    }
+
+    /* pagination dots */
+    .pagination { display: flex; align-items: center; gap: 10px; }
+    .dot {
+      position: relative; overflow: hidden;
+      height: 6px; border-radius: 8px;
+      background: rgba(255,255,255,0.2);
+      cursor: pointer;
+      transition: width 300ms cubic-bezier(.4,0,.16,1);
+      flex-shrink: 0;
+    }
+    .dot.inactive { width: 6px; }
+    .dot.active   { width: 48px; background: rgba(255,255,255,0.2); }
+    .dot-fill {
+      position: absolute; top: 0; left: 0; bottom: 0;
+      background: var(--cream); width: 0%;
+    }
+    .dot.active .dot-fill {
+      animation: dot-progress var(--dot-duration, 5s) linear forwards;
+    }
+    @keyframes dot-progress { from { width: 0%; } to { width: 100%; } }
+
+    /* arrow buttons */
+    .arrows { display: flex; gap: 8px; }
+    .arrow-btn {
+      width: 25px; height: 25px;
+      background: var(--gray-850);
+      border-radius: var(--btn-radius);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; border: none;
+      transition: background 150ms ease;
+    }
+    .arrow-btn:hover { background: #333; }
+    .arrow-btn svg { width: 12px; height: 12px; display: block; }
+
+    /* ─── LOGOS ───────────────────────────────────────────────────── */
+    .logos-section {
+      padding: 16px 0; overflow: hidden; position: relative;
+      background: var(--bg);
+    }
+    .logos-section::before, .logos-section::after {
+      content: ''; position: absolute; top: 0; bottom: 0;
+      width: 80px; z-index: 2; pointer-events: none;
+    }
+    .logos-section::before { left: 0; background: linear-gradient(to right, var(--bg), transparent); }
+    .logos-section::after  { right: 0; background: linear-gradient(to left, var(--bg), transparent); }
+    .logos-track {
+      display: flex; align-items: center; gap: 48px;
+      width: max-content;
+      animation: marquee 32s linear infinite;
+    }
+    .logos-track:hover { animation-play-state: paused; }
+    @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    .logo-item { flex-shrink: 0; height: 52px; display: flex; align-items: center; }
+    .logo-item img {
+      height: 100%; width: auto; max-width: 110px; object-fit: contain;
+      filter: brightness(0) invert(1); opacity: 0.5; transition: opacity 200ms;
+    }
+    .logo-item img:hover { opacity: 0.9; }
+
+    /* ─── ACTIVE CARD GLOW SHADOW ─────────────────────────────────── */
+    .cf-active {
+      box-shadow: 0 30px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.06);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <div class="nav-wrap">
+    <nav class="nav">
+      <div style="width:206px;flex-shrink:0;">
+        <img class="nav-logo" src="https://www.figma.com/api/mcp/asset/e60e6b9c-7ea8-4c80-a4c1-23fd77250838" alt="Cerebras">
+      </div>
+      <ul class="nav-menu">
+        <li><a href="#">Products</a></li>
+        <li><a href="#">Customers</a></li>
+        <li><a href="#">Developers</a></li>
+        <li><a href="#">Resources</a></li>
+        <li><a href="#">Pricing</a></li>
+        <li><a href="#">Company</a></li>
+      </ul>
+      <div class="nav-actions">
+        <button class="btn btn-gray" style="width:44px;padding:0;" aria-label="Search">
+          <img src="https://www.figma.com/api/mcp/asset/a4a24bbb-044c-469e-a612-b979f09262b4" alt="" style="width:16px;height:16px;">
+        </button>
+        <a href="#" class="btn btn-dark">Contact us</a>
+        <a href="#" class="btn btn-gradient"><span class="btn-label">Get started</span></a>
+      </div>
+    </nav>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero-section">
+
+    <!-- COVER FLOW -->
+    <div class="cflow-clip">
+    <div class="cflow-stage" id="cfStage">
+      <div class="cflow-inner" id="cfInner">
+
+        <!-- SLIDE 1: VIDEO BG, centered content -->
+        <div class="card" data-index="0">
+          <div class="card-bg">
+            <video autoplay muted loop playsinline>
+              <source src="hero-bg.mp4" type="video/mp4">
+            </video>
+          </div>
+          <div class="card-overlay" style="background:linear-gradient(203deg,rgba(241,89,42,0) 12%,rgba(241,89,42,0.14) 46%,rgba(241,89,42,0) 87%); mix-blend-mode:color-burn;"></div>
+          <div class="card-overlay" style="background:rgba(0,0,0,0.36);"></div>
+          <div class="card-glow"></div>
+          <div class="card-center-body">
+            <h1 class="card-headline">
+              The <span class="hi">World's Fastest AI</span><br>
+              Runs on The <span class="hi">World's Biggest chip</span>
+            </h1>
+            <p class="card-sub">The Cerebras Wafer-Scale Engine is purpose-built for ultra-fast AI.</p>
+            <div class="card-ctas">
+              <a href="#" class="cta-white">Learn more</a>
+              <a href="#" class="cta-glass">Read the whitepaper</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- SLIDE 2: Multimodal -->
+        <div class="card" data-index="1">
+          <div style="position:absolute;inset:0;overflow:hidden;border-radius:inherit;">
+            <img src="https://www.figma.com/api/mcp/asset/dcba2838-3af2-4ed9-949a-db4f1c6e4ff7" alt="" style="width:100%;height:100%;object-fit:cover;object-position:center;">
+            <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,0.72) 0%,rgba(0,0,0,0.35) 50%,transparent 100%);"></div>
+          </div>
+          <div class="card-topleft-body">
+            <h2 class="card-h2">The fastest inference is now multimodal</h2>
+            <p class="card-p">Gemma 4 is now running at 1,500+ tokens per second on Cerebras. 10x faster than GPUs.</p>
+            <a href="#" class="cta-outline">Read more</a>
+          </div>
+        </div>
+
+        <!-- SLIDE 3: Kimi -->
+        <div class="card" data-index="2">
+          <div style="position:absolute;inset:0;overflow:hidden;border-radius:inherit;">
+            <img src="https://www.figma.com/api/mcp/asset/4887ad79-f8b0-4f06-a1a2-3d939321507e" alt="" style="width:100%;height:100%;object-fit:cover;object-position:center;">
+            <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,0.65) 0%,rgba(0,0,0,0.25) 50%,transparent 100%);"></div>
+          </div>
+          <div class="card-topleft-body">
+            <h2 class="card-h2">Which is faster: Kimi K2.6 on Cerebras?</h2>
+            <p class="card-p">A head-to-head benchmark — see how Cerebras inference stacks up against Gemini Flash.</p>
+            <a href="#" class="cta-outline">Read more</a>
+          </div>
+        </div>
+
+        <!-- SLIDE 4: Economics -->
+        <div class="card" data-index="3">
+          <div style="position:absolute;inset:0;overflow:hidden;border-radius:inherit;">
+            <img src="https://www.figma.com/api/mcp/asset/0b7df1e0-c6e5-4b5e-b247-9f14585748a2" alt="" style="width:100%;height:100%;object-fit:cover;object-position:center;">
+            <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,0.72) 0%,rgba(0,0,0,0.30) 50%,transparent 100%);"></div>
+          </div>
+          <div class="card-topleft-body">
+            <h2 class="card-h2">The economics of AI reasoning</h2>
+            <p class="card-p">Why inference speed changes the cost structure of AI deployment — and what it means for your business.</p>
+            <a href="#" class="cta-outline">Read more</a>
+          </div>
+        </div>
+
+        <!-- SLIDE 5: Cybersecurity -->
+        <div class="card" data-index="4">
+          <div style="position:absolute;inset:0;overflow:hidden;border-radius:inherit;">
+            <img src="https://www.figma.com/api/mcp/asset/dcba2838-3af2-4ed9-949a-db4f1c6e4ff7" alt="" style="width:100%;height:100%;object-fit:cover;object-position:center;">
+            <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,0.72) 0%,rgba(0,0,0,0.30) 50%,transparent 100%);"></div>
+          </div>
+          <div class="card-topleft-body">
+            <h2 class="card-h2">How faster inference gives cybersecurity an edge</h2>
+            <p class="card-p">Real-time threat detection at 1,500+ tokens per second — why speed is the new security advantage.</p>
+            <a href="#" class="cta-outline">Read more</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    </div><!-- /cflow-clip -->
+
+    <!-- CONTROLS -->
+    <div class="controls-row">
+      <span class="explore-label">Explore the latest</span>
+      <div class="pagination" id="pagination">
+        <div class="dot active"   data-i="0"><div class="dot-fill"></div></div>
+        <div class="dot inactive" data-i="1"><div class="dot-fill"></div></div>
+        <div class="dot inactive" data-i="2"><div class="dot-fill"></div></div>
+        <div class="dot inactive" data-i="3"><div class="dot-fill"></div></div>
+        <div class="dot inactive" data-i="4"><div class="dot-fill"></div></div>
+      </div>
+      <div class="arrows">
+        <button class="arrow-btn" id="prevBtn" aria-label="Previous">
+          <svg viewBox="0 0 12 12" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7.5 2L3 6l4.5 4"/>
+          </svg>
+        </button>
+        <button class="arrow-btn" id="nextBtn" aria-label="Next">
+          <svg viewBox="0 0 12 12" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4.5 2L9 6l-4.5 4"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- LOGOS -->
+  <div class="logos-section">
+    <div class="logos-track">
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/b40f0e66-49a1-415f-a45e-5d63dd61eae6" alt="W&B"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/55f989a7-af07-4fa1-8267-4b689cfc9c53" alt="Partner"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/733d0eba-8e4f-48de-a469-003bfdb012f7" alt="Aleph Alpha"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/25acab90-f92a-4307-b0ca-9cb29d747af1" alt="Nasdaq"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/b933a170-d7e6-4379-bb4f-1ea90ae3f26b" alt="LangChain"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/eec8cfbe-eb8e-4113-81ef-d03fce42030b" alt="Partner"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/d408a286-8416-4078-b497-57deaac8a455" alt="Docker"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/859cc87d-42df-48c9-9940-21c0eba1fa5e" alt="GSK"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/578f0ca9-e82c-4611-8fdc-081712ca3262" alt="Meter"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/6a0e6dac-97dc-4545-879a-623ec118bad0" alt="LlamaIndex"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/c8034897-1fe5-464d-a592-b3829d553175" alt="LiveKit"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/a0d863ac-1bff-4b0a-a6d1-9606bda89dc5" alt="Partner"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/b40f0e66-49a1-415f-a45e-5d63dd61eae6" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/55f989a7-af07-4fa1-8267-4b689cfc9c53" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/733d0eba-8e4f-48de-a469-003bfdb012f7" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/25acab90-f92a-4307-b0ca-9cb29d747af1" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/b933a170-d7e6-4379-bb4f-1ea90ae3f26b" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/eec8cfbe-eb8e-4113-81ef-d03fce42030b" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/d408a286-8416-4078-b497-57deaac8a455" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/859cc87d-42df-48c9-9940-21c0eba1fa5e" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/578f0ca9-e82c-4611-8fdc-081712ca3262" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/6a0e6dac-97dc-4545-879a-623ec118bad0" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/c8034897-1fe5-464d-a592-b3829d553175" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/a0d863ac-1bff-4b0a-a6d1-9606bda89dc5" alt="" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <script>
+    const TOTAL    = 5;
+    const DURATION = 5000;
+
+    const stage  = document.getElementById('cfStage');
+    const inner  = document.getElementById('cfInner');
+    const cards  = Array.from(document.querySelectorAll('.card'));
+    const dots   = Array.from(document.querySelectorAll('.dot'));
+
+    let current      = 0;
+    let isAnimating  = false;
+    let autoTimer    = null;
+    let autoStartedAt = 0;
+    let autoRemainder = DURATION;
+
+    // ── Cover flow transform config ────────────────────────────────────
+    // True 3D cover flow: perspective on stage, rotateY on each card.
+    // overflow:hidden on cflow-inner (the containing block) clips correctly.
+    // offset = card logical index - current
+    function getConfig(offset) {
+      const abs  = Math.abs(offset);
+      const sign = offset >= 0 ? 1 : -1;
+      //                          tx            ry             sc     op     z
+      if (abs === 0) return { tx: 0,            ry: 0,         sc: 1,    op: 1,    z: 20 };
+      if (abs === 1) return { tx: sign*560,     ry: sign*-58,  sc: 0.86, op: 0.92, z: 10 };
+      if (abs === 2) return { tx: sign*800,     ry: sign*-74,  sc: 0.70, op: 0.35, z:  5 };
+                     return { tx: sign*940,     ry: sign*-84,  sc: 0.55, op: 0,    z:  1 };
+    }
+
+    function cardTransform(card, offset, animated) {
+      const c = getConfig(offset);
+      const ease = animated ? 'transform 900ms cubic-bezier(0.16,1,0.3,1), opacity 700ms ease, box-shadow 700ms ease' : 'none';
+      card.style.transition = ease;
+      card.style.transform  = `translateX(calc(-50% + ${c.tx}px)) rotateY(${c.ry}deg) scale(${c.sc})`;
+      card.style.opacity    = c.op;
+      card.style.zIndex     = c.z;
+      card.style.pointerEvents = (offset === 0) ? 'auto' : (Math.abs(offset) === 1 ? 'auto' : 'none');
+    }
+
+    function updateCards(animated = true) {
+      cards.forEach((card, i) => {
+        // Compute the shortest circular offset
+        let offset = i - current;
+        if (offset >  Math.floor(TOTAL / 2)) offset -= TOTAL;
+        if (offset < -Math.floor(TOTAL / 2)) offset += TOTAL;
+
+        cardTransform(card, offset, animated);
+
+        const wasActive = card.classList.contains('cf-active');
+        const isActive  = offset === 0;
+        card.classList.toggle('cf-active', isActive);
+
+        if (isActive && !wasActive) {
+          // Delay reveal until the card has mostly moved into center position
+          setTimeout(() => animateSlideIn(card), animated ? 400 : 0);
+        } else if (!isActive && wasActive) {
+          resetSlideText(card);
+        }
+      });
+
+      // Dots
+      dots.forEach((d, i) => {
+        const fill   = d.querySelector('.dot-fill');
+        const active = i === current;
+        d.className  = 'dot ' + (active ? 'active' : 'inactive');
+        fill.style.animation = 'none';
+        fill.offsetHeight;
+        if (active) {
+          d.style.setProperty('--dot-duration', DURATION + 'ms');
+          fill.style.animation = `dot-progress ${DURATION}ms linear forwards`;
+        }
+      });
+    }
+
+    // ── Navigation ─────────────────────────────────────────────────────
+    function goTo(idx, animated = true) {
+      if (isAnimating && animated) return;
+      current = ((idx % TOTAL) + TOTAL) % TOTAL;
+      isAnimating = true;
+      updateCards(animated);
+      resetAuto();
+      setTimeout(() => { isAnimating = false; }, 950);
+    }
+
+    function stepBy(delta) {
+      goTo(current + delta);
+    }
+
+    // ── Autoplay ───────────────────────────────────────────────────────
+    function startAuto(delay) {
+      const d = delay !== undefined ? delay : DURATION;
+      autoStartedAt = Date.now();
+      autoRemainder = d;
+      autoTimer = setTimeout(() => stepBy(1), d);
+    }
+    function resetAuto() {
+      clearTimeout(autoTimer);
+      startAuto(DURATION);
+    }
+
+    // ── Controls ───────────────────────────────────────────────────────
+    document.getElementById('prevBtn').addEventListener('click', () => stepBy(-1));
+    document.getElementById('nextBtn').addEventListener('click', () => stepBy(1));
+    dots.forEach(d => d.addEventListener('click', () => goTo(+d.dataset.i)));
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight') stepBy(1);
+      if (e.key === 'ArrowLeft')  stepBy(-1);
+    });
+
+    // Click on side card → navigate to it
+    cards.forEach((card, i) => {
+      card.addEventListener('click', (e) => {
+        if (isDragging) return;
+        if (i !== current) { e.preventDefault(); goTo(i); }
+      });
+    });
+
+    // ── Drag ──────────────────────────────────────────────────────────
+    let dragStartX = null;
+    let dragDelta  = 0;
+    let isDragging = false;
+
+    stage.addEventListener('pointerdown', e => {
+      if (isAnimating) return;
+      dragStartX = e.clientX;
+      dragDelta  = 0;
+      isDragging = false;
+      stage.setPointerCapture(e.pointerId);
+      clearTimeout(autoTimer);
+    });
+    stage.addEventListener('pointermove', e => {
+      if (dragStartX === null) return;
+      dragDelta = e.clientX - dragStartX;
+      if (Math.abs(dragDelta) > 6) isDragging = true;
+    });
+    stage.addEventListener('pointerup', () => {
+      if (dragStartX === null) return;
+      if (isDragging) {
+        if      (dragDelta < -60) stepBy(1);
+        else if (dragDelta >  60) stepBy(-1);
+        else startAuto(autoRemainder);
+      } else {
+        startAuto(autoRemainder);
+      }
+      dragStartX = null;
+      isDragging = false;
+    });
+    stage.addEventListener('pointercancel', () => {
+      dragStartX = null;
+      isDragging = false;
+      startAuto(autoRemainder);
+    });
+    stage.addEventListener('dragstart', e => e.preventDefault());
+
+    // Pause/resume on hover
+    stage.addEventListener('mouseenter', () => {
+      if (dragStartX !== null) return;
+      clearTimeout(autoTimer);
+      autoRemainder = Math.max(0, autoRemainder - (Date.now() - autoStartedAt));
+    });
+    stage.addEventListener('mouseleave', () => {
+      if (dragStartX !== null) return;
+      startAuto(autoRemainder);
+    });
+
+    // ── Text scramble ─────────────────────────────────────────────────
+    const GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789=}][<>_-+/\\|@#';
+    const FRAME_MS = 28;
+
+    // Hover scramble for buttons
+    function scramble(el) {
+      const target   = el.querySelector('.btn-label') || el;
+      const original = el.dataset.scramble;
+      if (!original) return;
+      if (el._scrambleTimer) clearInterval(el._scrambleTimer);
+      const len    = original.length;
+      const frames = Math.round(600 / FRAME_MS);
+      let   tick   = 0;
+      el._scrambleTimer = setInterval(() => {
+        const progress = tick / frames;
+        let out = '';
+        for (let i = 0; i < len; i++) {
+          if (original[i] === ' ') { out += ' '; continue; }
+          const lockAt = i / len;
+          out += progress >= lockAt
+            ? original[i]
+            : GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+        }
+        target.textContent = out;
+        tick++;
+        if (tick > frames) { clearInterval(el._scrambleTimer); target.textContent = original; }
+      }, FRAME_MS);
+    }
+
+    document.querySelectorAll('.cta-white, .cta-glass, .cta-outline, .btn-dark, .btn-gradient').forEach(btn => {
+      btn.dataset.scramble = btn.textContent.trim();
+      btn.addEventListener('mouseenter', () => scramble(btn));
+    });
+
+    // Reveal scramble for slide text — saves and restores innerHTML so .hi spans survive
+    function scrambleReveal(el, delay, duration) {
+      if (!el) return;
+      const savedHTML = el.innerHTML;
+      const plainText = el.textContent.replace(/\s+/g, ' ').trim();
+      const len       = plainText.length;
+      if (!len) return;
+      if (el._revealTimer)    { clearTimeout(el._revealTimer); }
+      if (el._revealInterval) { clearInterval(el._revealInterval); }
+      el.style.opacity = '0';
+      el._revealTimer = setTimeout(() => {
+        el.style.opacity = '1';
+        const frames = Math.round(duration / FRAME_MS);
+        let tick = 0;
+        el._revealInterval = setInterval(() => {
+          const progress = tick / frames;
+          let out = '';
+          for (let i = 0; i < len; i++) {
+            const ch = plainText[i];
+            if (ch === ' ') { out += ' '; continue; }
+            const lockAt = i / len;
+            out += progress >= lockAt ? ch : GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+          }
+          el.textContent = out;
+          tick++;
+          if (tick > frames) {
+            clearInterval(el._revealInterval);
+            el.innerHTML = savedHTML;
+          }
+        }, FRAME_MS);
+      }, delay);
+    }
+
+    function stopReveal(el) {
+      if (!el) return;
+      if (el._revealTimer)    clearTimeout(el._revealTimer);
+      if (el._revealInterval) clearInterval(el._revealInterval);
+      el.style.opacity = '0';
+    }
+
+    function animateSlideIn(card) {
+      const headline = card.querySelector('.card-headline');
+      const sub      = card.querySelector('.card-sub');
+      const ctas     = card.querySelector('.card-ctas');
+      const h2       = card.querySelector('.card-h2');
+      const p        = card.querySelector('.card-p');
+      const cta      = card.querySelector('.cta-outline');
+
+      if (headline) scrambleReveal(headline, 0,   860);
+      if (sub)      scrambleReveal(sub,      260, 580);
+      if (h2)       scrambleReveal(h2,       0,   720);
+      if (p)        scrambleReveal(p,        230, 580);
+      if (cta)      scrambleReveal(cta,      450, 400);
+      if (ctas) {
+        ctas.style.opacity = '0';
+        setTimeout(() => { ctas.style.opacity = '1'; }, 460);
+      }
+    }
+
+    function resetSlideText(card) {
+      ['.card-headline', '.card-sub', '.card-ctas', '.card-h2', '.card-p', '.cta-outline']
+        .forEach(sel => stopReveal(card.querySelector(sel)));
+    }
+
+    // ── Init ──────────────────────────────────────────────────────────
+    goTo(0, false);
+  </script>
+</body>
+</html>

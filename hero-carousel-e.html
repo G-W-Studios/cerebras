@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cerebras — Hero Carousel E</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Sometype+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange: #F15A29;
+      --orange-hover: #d94e21;
+      --mandarin: #FF985D;
+      --ink: #1A1A1A;
+      --cream: #F7F5F2;
+      --cream-alt: #ECE8E4;
+      --gray-200: #CCCAC8;
+      --bg-dark: #240a06;
+      --radius-sm: 2px;
+      --radius-lg: 40px;
+    }
+
+    html, body { height: 100%; }
+
+    body {
+      background: var(--bg-dark);
+      color: #fff;
+      font-family: 'Manrope', sans-serif;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── NAV ─────────────────────────────────────────────────────── */
+    .nav-wrap {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 300;
+      height: 80px;
+    }
+    .nav {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 48px;
+      background: rgba(20, 5, 1, 0.5);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .nav-logo {
+      width: 100px; height: 40px;
+      object-fit: contain; object-position: left center;
+      display: block; flex-shrink: 0;
+    }
+    .nav-menu {
+      display: flex; align-items: center; gap: 32px; list-style: none;
+    }
+    .nav-menu a {
+      font-family: 'Manrope', sans-serif; font-weight: 600; font-size: 14px;
+      color: rgba(255,255,255,0.75); text-decoration: none; letter-spacing: -0.01em;
+      white-space: nowrap; transition: color 150ms ease;
+    }
+    .nav-menu a:hover { color: #fff; }
+    .nav-actions { display: flex; align-items: center; gap: 8px; }
+    .btn-nav {
+      display: inline-flex; align-items: center; justify-content: center;
+      height: 36px; padding: 0 16px;
+      border-radius: var(--radius-sm); border: none; cursor: pointer;
+      font-family: 'Sometype Mono', monospace; font-weight: 600;
+      font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+      text-decoration: none; transition: background 150ms ease;
+    }
+    .btn-nav-ghost {
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.8);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .btn-nav-ghost:hover { background: rgba(255,255,255,0.14); }
+    .btn-nav-primary {
+      background: var(--orange); color: #fff;
+    }
+    .btn-nav-primary:hover { background: var(--orange-hover); }
+
+    /* ─── HERO (full-viewport) ────────────────────────────────────── */
+    .hero {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      min-height: 620px;
+      overflow: hidden;
+    }
+
+    /* ─── SLIDE STACK ─────────────────────────────────────────────── */
+    .slides-container {
+      position: absolute;
+      inset: 0;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 800ms cubic-bezier(.4,0,.2,1);
+      pointer-events: none;
+    }
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* full-bleed slide background */
+    .slide-bg {
+      position: absolute;
+      inset: 0;
+    }
+    .slide-bg img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      object-position: center center;
+      display: block;
+    }
+    /* color overlay per slide */
+    .slide-overlay {
+      position: absolute;
+      inset: 0;
+    }
+
+    /* ─── SLIDE TEXT (left, vertically centered) ──────────────────── */
+    .slide-body {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: flex-end;
+      padding: 0 64px 100px;
+      z-index: 10;
+    }
+    .slide-copy {
+      max-width: 620px;
+    }
+    .slide-eyebrow {
+      font-family: 'Sometype Mono', monospace;
+      font-weight: 600; font-size: 11px;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--mandarin);
+      margin-bottom: 18px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .slide-eyebrow::before {
+      content: '';
+      display: block; width: 20px; height: 1px;
+      background: var(--mandarin); flex-shrink: 0;
+    }
+    .slide-headline {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 300;
+      font-size: clamp(40px, 4.5vw, 68px);
+      line-height: 1.0;
+      letter-spacing: -0.03em;
+      color: #fff;
+      margin-bottom: 20px;
+    }
+    .slide-headline .hi {
+      background: linear-gradient(90deg, #FFCE5C 0%, #F76D32 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .slide-sub {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 400; font-size: 16px; line-height: 1.55;
+      color: rgba(255,255,255,0.6);
+      max-width: 460px;
+      margin-bottom: 32px;
+    }
+    .slide-ctas {
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    }
+    .cta-primary {
+      display: inline-flex; align-items: center; justify-content: center;
+      height: 44px; padding: 0 24px;
+      background: #fff; color: var(--ink);
+      border-radius: 999px; border: none; cursor: pointer;
+      font-family: 'Sometype Mono', monospace; font-weight: 600;
+      font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+      text-decoration: none;
+      transition: background 150ms ease, color 150ms ease;
+    }
+    .cta-primary:hover { background: var(--orange); color: #fff; }
+    .cta-ghost {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 8px;
+      height: 44px; padding: 0 24px;
+      background: transparent; color: rgba(255,255,255,0.75);
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.25);
+      cursor: pointer;
+      font-family: 'Sometype Mono', monospace; font-weight: 600;
+      font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+      text-decoration: none;
+      transition: border-color 150ms ease, color 150ms ease, background 150ms ease;
+    }
+    .cta-ghost:hover {
+      border-color: rgba(255,255,255,0.5);
+      color: #fff;
+      background: rgba(255,255,255,0.06);
+    }
+
+    /* ─── RIGHT PANEL (next-slide preview, DeepMind style) ───────── */
+    .right-panel {
+      position: absolute;
+      top: 0; right: 0; bottom: 0;
+      width: 320px;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 100px 48px 100px 40px;
+      background: linear-gradient(to left, rgba(10,2,0,0.75) 0%, rgba(10,2,0,0.3) 60%, transparent 100%);
+      backdrop-filter: blur(0px);
+      pointer-events: none;
+    }
+
+    .panel-label {
+      font-family: 'Sometype Mono', monospace;
+      font-weight: 600; font-size: 10px;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+      margin-bottom: 24px;
+    }
+
+    /* panel slides: one visible at a time */
+    .panel-slides {
+      position: relative;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .panel-slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 12px;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 500ms ease, transform 500ms ease;
+      pointer-events: none;
+    }
+    .panel-slide.active {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .panel-slide-tag {
+      font-family: 'Sometype Mono', monospace;
+      font-weight: 600; font-size: 10px;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--mandarin);
+    }
+    .panel-slide-title {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 300;
+      font-size: 22px; line-height: 1.15; letter-spacing: -0.02em;
+      color: #fff;
+    }
+    .panel-slide-desc {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 400; font-size: 13px; line-height: 1.55;
+      color: rgba(255,255,255,0.45);
+    }
+    .panel-slide-cta {
+      display: inline-flex; align-items: center; justify-content: center;
+      align-self: flex-start;
+      margin-top: 8px;
+      height: 36px; padding: 0 18px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: var(--radius-sm);
+      font-family: 'Sometype Mono', monospace; font-weight: 600;
+      font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+      color: rgba(255,255,255,0.75); text-decoration: none;
+      transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+    }
+    .panel-slide-cta:hover {
+      background: rgba(241,90,41,0.2);
+      border-color: rgba(241,90,41,0.4);
+      color: #fff;
+    }
+
+    /* ─── BOTTOM CONTROLS ────────────────────────────────────────── */
+    .hero-controls {
+      position: absolute;
+      bottom: 40px; left: 64px; right: 64px;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .explore-label {
+      font-family: 'Sometype Mono', monospace;
+      font-weight: 600; font-size: 10px;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+    }
+
+    .controls-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    /* progress ticks */
+    .progress-ticks {
+      display: flex; align-items: center; gap: 6px;
+    }
+    .progress-tick {
+      width: 24px; height: 2px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 1px;
+      position: relative; overflow: hidden;
+      cursor: pointer;
+      transition: width 250ms ease;
+    }
+    .progress-tick.active { width: 40px; }
+    .progress-tick-fill {
+      position: absolute; top: 0; left: 0; bottom: 0;
+      background: rgba(255,255,255,0.85);
+      width: 0%;
+    }
+    .progress-tick.active .progress-tick-fill {
+      animation: tick-fill 6s linear forwards;
+    }
+    @keyframes tick-fill { from { width: 0%; } to { width: 100%; } }
+
+    /* prev/next buttons */
+    .arrow-btn {
+      width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 150ms ease, border-color 150ms ease;
+    }
+    .arrow-btn:hover {
+      background: rgba(255,255,255,0.16);
+      border-color: rgba(255,255,255,0.25);
+    }
+    .arrow-btn svg { width: 14px; height: 14px; }
+
+    /* ─── SLIDE 1: CHIP (full wafer image) ───────────────────────── */
+    .slide-chip .slide-overlay {
+      background:
+        linear-gradient(to right, rgba(10,3,0,0.85) 0%, rgba(10,3,0,0.2) 55%, rgba(10,3,0,0.1) 100%),
+        linear-gradient(to top, rgba(10,3,0,0.8) 0%, transparent 50%);
+    }
+
+    /* ─── SLIDE 2: MULTIMODAL (gradient bg + partner pills) ──────── */
+    .slide-multimodal .slide-bg {
+      background: radial-gradient(ellipse 100% 80% at 70% 40%, #8B2500 0%, #3D0F00 40%, #1a0400 80%);
+    }
+    .slide-multimodal .slide-overlay {
+      background:
+        linear-gradient(to right, rgba(10,3,0,0.9) 0%, rgba(10,3,0,0.25) 60%, transparent 100%),
+        linear-gradient(to top, rgba(10,3,0,0.7) 0%, transparent 50%);
+    }
+
+    /* partner visual centered */
+    .multimodal-visual {
+      position: absolute;
+      inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      padding-left: 30%;
+      z-index: 5;
+    }
+    .multi-lockup {
+      display: flex; flex-direction: column; align-items: center; gap: 32px;
+    }
+    .multi-row {
+      display: flex; align-items: center; gap: 20px;
+    }
+    .multi-pill {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 24px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 999px;
+      backdrop-filter: blur(16px);
+    }
+    .multi-dot {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--orange);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .multi-name {
+      font-family: 'Sometype Mono', monospace; font-weight: 600;
+      font-size: 16px; letter-spacing: 0.04em; text-transform: uppercase;
+      color: #fff;
+    }
+    .multi-sep {
+      font-family: 'Manrope', sans-serif; font-weight: 300;
+      font-size: 40px; color: rgba(255,255,255,0.3);
+    }
+    .multi-stat {
+      font-family: 'Manrope', sans-serif; font-weight: 300;
+      font-size: 80px; line-height: 1; letter-spacing: -0.04em;
+      background: linear-gradient(90deg, #FFCE5C 0%, #F76D32 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 60px rgba(241,90,41,0.35));
+    }
+    .multi-unit {
+      font-family: 'Sometype Mono', monospace; font-weight: 600;
+      font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+      text-align: center;
+    }
+
+    /* ─── SLIDE 3: SPEED (dark bg + big metric) ──────────────────── */
+    .slide-speed .slide-bg {
+      background: radial-gradient(ellipse 80% 60% at 65% 35%, rgba(140,80,0,0.5) 0%, rgba(20,8,0,1) 65%);
+    }
+    .slide-speed .slide-overlay {
+      background:
+        linear-gradient(to right, rgba(10,3,0,0.92) 0%, rgba(10,3,0,0.3) 60%, transparent 100%),
+        linear-gradient(to top, rgba(10,3,0,0.75) 0%, transparent 45%);
+    }
+    .speed-visual {
+      position: absolute;
+      inset: 0;
+      display: flex; align-items: center; justify-content: flex-end;
+      padding-right: 120px;
+      z-index: 5;
+    }
+    .speed-card {
+      display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
+    }
+    .speed-num {
+      font-family: 'Manrope', sans-serif; font-weight: 300;
+      font-size: clamp(80px, 10vw, 140px);
+      line-height: 1; letter-spacing: -0.05em;
+      background: linear-gradient(135deg, #FFE099 0%, #F76D32 55%, #d44010 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 80px rgba(241,90,41,0.4));
+    }
+    .speed-tok {
+      font-family: 'Sometype Mono', monospace; font-weight: 600;
+      font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+    }
+    .speed-compare {
+      margin-top: 12px;
+      display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
+    }
+    .speed-compare-row {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .speed-bar-wrap {
+      width: 120px; height: 3px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px; overflow: hidden;
+    }
+    .speed-bar-fill {
+      height: 100%; border-radius: 2px;
+      background: var(--orange);
+    }
+    .speed-compare-label {
+      font-family: 'Sometype Mono', monospace; font-weight: 600;
+      font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
+      color: rgba(255,255,255,0.4); white-space: nowrap;
+    }
+
+    /* ─── BELOW-HERO CONTENT ─────────────────────────────────────── */
+    .below-hero {
+      background: var(--bg-dark);
+      padding: 64px 78px 80px;
+    }
+    .section-label {
+      font-family: 'Manrope', sans-serif; font-weight: 500;
+      font-size: 13px; color: rgba(255,255,255,0.35);
+      letter-spacing: -0.01em; margin-bottom: 36px;
+    }
+    .blog-grid {
+      display: grid;
+      grid-template-columns: 1fr 1px 1fr 1px 1fr;
+      gap: 0; align-items: stretch;
+    }
+    .blog-divider {
+      background: rgba(255,255,255,0.1); align-self: stretch;
+      transform: scaleY(0.2); transform-origin: center;
+      transition: transform 400ms cubic-bezier(.22,1,.36,1), background 400ms;
+    }
+    .blog-card:hover + .blog-divider,
+    .blog-divider:has(+ .blog-card:hover) {
+      transform: scaleY(1); background: rgba(255,255,255,0.25);
+    }
+    .blog-card {
+      padding: 0 36px;
+      display: flex; flex-direction: column;
+      justify-content: space-between;
+      min-height: 200px; gap: 20px; cursor: pointer;
+    }
+    .blog-card:first-child { padding-left: 0; }
+    .blog-card:last-child  { padding-right: 0; }
+    .blog-card-top { display: flex; flex-direction: column; gap: 14px; }
+    .tag {
+      display: inline-flex; align-items: center;
+      padding: 5px 7px; border-radius: var(--radius-sm);
+      background: var(--mandarin);
+      font-family: 'Sometype Mono', monospace; font-weight: 600;
+      font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase;
+      color: var(--ink); align-self: flex-start;
+    }
+    .blog-title {
+      font-family: 'Manrope', sans-serif; font-weight: 500;
+      font-size: 20px; line-height: 1.3; letter-spacing: -0.02em; color: #fff;
+    }
+    .blog-desc {
+      font-family: 'Manrope', sans-serif; font-size: 14px;
+      line-height: 1.5; color: var(--gray-200);
+      opacity: 0; transform: translateY(6px);
+      transition: opacity 220ms ease, transform 220ms ease;
+    }
+    .blog-link {
+      display: flex; align-items: center; gap: 10px;
+      opacity: 0; transform: translateY(6px);
+      transition: opacity 220ms ease 40ms, transform 220ms ease 40ms;
+      text-decoration: none; margin-top: auto;
+    }
+    .blog-card:hover .blog-desc,
+    .blog-card:hover .blog-link { opacity: 1; transform: translateY(0); }
+    .blog-arrow {
+      width: 28px; height: 28px; background: var(--orange);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: background 150ms ease;
+    }
+    .blog-card:hover .blog-arrow { background: var(--orange-hover); }
+    .blog-arrow svg { width: 14px; height: 14px; }
+    .blog-link-text {
+      font-family: 'Manrope', sans-serif; font-weight: 600;
+      font-size: 15px; color: #fff; letter-spacing: -0.01em;
+    }
+
+    /* logos */
+    .logos-section {
+      padding: 56px 0; overflow: hidden; position: relative;
+    }
+    .logos-section::before, .logos-section::after {
+      content: ''; position: absolute; top: 0; bottom: 0; width: 100px; z-index: 2; pointer-events: none;
+    }
+    .logos-section::before { left: 0; background: linear-gradient(to right, var(--bg-dark), transparent); }
+    .logos-section::after  { right: 0; background: linear-gradient(to left, var(--bg-dark), transparent); }
+    .logos-track {
+      display: flex; align-items: center; gap: 56px;
+      width: max-content;
+      animation: marquee 32s linear infinite;
+    }
+    .logos-track:hover { animation-play-state: paused; }
+    @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    .logo-item { flex-shrink: 0; height: 48px; display: flex; align-items: center; }
+    .logo-item img {
+      height: 100%; width: auto; max-width: 110px; object-fit: contain;
+      filter: brightness(0) invert(1); opacity: 0.45;
+      transition: opacity 200ms ease; display: block;
+    }
+    .logo-item img:hover { opacity: 0.8; }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <div class="nav-wrap">
+    <nav class="nav">
+      <img class="nav-logo" src="https://www.figma.com/api/mcp/asset/e60e6b9c-7ea8-4c80-a4c1-23fd77250838" alt="Cerebras">
+      <ul class="nav-menu">
+        <li><a href="#">Products</a></li>
+        <li><a href="#">Customers</a></li>
+        <li><a href="#">Developers</a></li>
+        <li><a href="#">Resources</a></li>
+        <li><a href="#">Pricing</a></li>
+        <li><a href="#">Company</a></li>
+      </ul>
+      <div class="nav-actions">
+        <a href="#" class="btn-nav btn-nav-ghost">Contact us</a>
+        <a href="#" class="btn-nav btn-nav-primary">Get started</a>
+      </div>
+    </nav>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero" id="hero">
+
+    <div class="slides-container">
+
+      <!-- SLIDE 1: CHIP -->
+      <div class="slide slide-chip active" data-index="0">
+        <div class="slide-bg">
+          <img src="Cerebras Design System 2/assets/imagery/wafer-planview.png" alt="Cerebras WSE-3 Wafer">
+        </div>
+        <div class="slide-overlay"></div>
+        <div class="slide-body">
+          <div class="slide-copy">
+            <div class="slide-eyebrow">Hardware</div>
+            <h1 class="slide-headline">
+              The World's <span class="hi">Fastest AI</span><br>
+              runs on The World's<br>
+              <span class="hi">Biggest Chip</span>
+            </h1>
+            <p class="slide-sub">The Wafer Scale Engine 3 — 57× larger than the biggest GPU, built from the ground up for AI inference at production scale.</p>
+            <div class="slide-ctas">
+              <a href="#" class="cta-primary">Learn more</a>
+              <a href="#" class="cta-ghost">See the specs</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 2: MULTIMODAL -->
+      <div class="slide slide-multimodal" data-index="1">
+        <div class="slide-bg"></div>
+        <div class="slide-overlay"></div>
+        <div class="multimodal-visual">
+          <div class="multi-lockup">
+            <div class="multi-row">
+              <div class="multi-pill">
+                <div class="multi-dot">
+                  <svg viewBox="0 0 12 12" width="14" height="14" fill="none">
+                    <circle cx="6" cy="6" r="5" fill="#fff" fill-opacity="0.9"/>
+                    <circle cx="6" cy="6" r="2.5" fill="#F15A29"/>
+                  </svg>
+                </div>
+                <span class="multi-name">Cerebras</span>
+              </div>
+              <span class="multi-sep">×</span>
+              <div class="multi-pill">
+                <span class="multi-name" style="color:rgba(255,255,255,0.8);">Gemma 4</span>
+              </div>
+            </div>
+            <div style="text-align:center;">
+              <div class="multi-stat">1,500+</div>
+              <div class="multi-unit" style="margin-top:6px;">tokens / second</div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-body">
+          <div class="slide-copy">
+            <div class="slide-eyebrow">Multimodal</div>
+            <h2 class="slide-headline">
+              The fastest inference<br>is now <span class="hi">multimodal</span>
+            </h2>
+            <p class="slide-sub">Gemma 4 running at 1,500+ tokens per second on Cerebras — 10× faster than any GPU cluster.</p>
+            <div class="slide-ctas">
+              <a href="#" class="cta-primary">Read more</a>
+              <a href="#" class="cta-ghost">View benchmark</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 3: SPEED -->
+      <div class="slide slide-speed" data-index="2">
+        <div class="slide-bg"></div>
+        <div class="slide-overlay"></div>
+        <div class="speed-visual">
+          <div class="speed-card">
+            <div class="speed-num">10×</div>
+            <div class="speed-tok">faster than GPU</div>
+            <div class="speed-compare">
+              <div class="speed-compare-row">
+                <div class="speed-bar-wrap"><div class="speed-bar-fill" style="width:100%;"></div></div>
+                <span class="speed-compare-label">Cerebras — 1,500 tok/s</span>
+              </div>
+              <div class="speed-compare-row">
+                <div class="speed-bar-wrap"><div class="speed-bar-fill" style="width:10%;background:rgba(255,255,255,0.2);"></div></div>
+                <span class="speed-compare-label">H100 GPU — 150 tok/s</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-body">
+          <div class="slide-copy">
+            <div class="slide-eyebrow">Performance</div>
+            <h2 class="slide-headline">
+              Deploy at<br><span class="hi">unprecedented</span><br>speed
+            </h2>
+            <p class="slide-sub">Run frontier models at full precision, full scale — no throttling, no compromises.</p>
+            <div class="slide-ctas">
+              <a href="#" class="cta-primary">Run the benchmark</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /slides-container -->
+
+    <!-- RIGHT PANEL: shows next slide info -->
+    <div class="right-panel">
+      <div class="panel-label">Up next</div>
+      <div class="panel-slides" id="panelSlides">
+        <!-- Panel for when slide 0 is active → shows slide 1 info -->
+        <div class="panel-slide active" data-for="0">
+          <div class="panel-slide-tag">Multimodal</div>
+          <div class="panel-slide-title">The fastest inference is now multimodal</div>
+          <div class="panel-slide-desc">Gemma 4 at 1,500+ tokens per second — 10× faster than GPU.</div>
+          <a href="#" class="panel-slide-cta">Read more</a>
+        </div>
+        <!-- Panel for when slide 1 is active → shows slide 2 info -->
+        <div class="panel-slide" data-for="1">
+          <div class="panel-slide-tag">Performance</div>
+          <div class="panel-slide-title">Deploy at unprecedented speed</div>
+          <div class="panel-slide-desc">Full precision, full scale — no throttling, no compromises on model size.</div>
+          <a href="#" class="panel-slide-cta">Run the benchmark</a>
+        </div>
+        <!-- Panel for when slide 2 is active → shows slide 0 info -->
+        <div class="panel-slide" data-for="2">
+          <div class="panel-slide-tag">Hardware</div>
+          <div class="panel-slide-title">The world's fastest AI runs on the world's biggest chip</div>
+          <div class="panel-slide-desc">WSE-3 — 57× larger than the biggest GPU, built for AI.</div>
+          <a href="#" class="panel-slide-cta">Learn more</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM CONTROLS -->
+    <div class="hero-controls">
+      <span class="explore-label">Explore Cerebras</span>
+      <div class="controls-right">
+        <div class="progress-ticks" id="progressTicks">
+          <div class="progress-tick active" data-i="0"><div class="progress-tick-fill"></div></div>
+          <div class="progress-tick" data-i="1"><div class="progress-tick-fill"></div></div>
+          <div class="progress-tick" data-i="2"><div class="progress-tick-fill"></div></div>
+        </div>
+        <div class="arrow-btn" id="prevBtn">
+          <svg viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 2L4 7l5 5"/>
+          </svg>
+        </div>
+        <div class="arrow-btn" id="nextBtn">
+          <svg viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 2l5 5-5 5"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- BELOW HERO -->
+  <div class="below-hero">
+    <p class="section-label">Latest from Cerebras</p>
+    <div class="blog-grid">
+      <div class="blog-card">
+        <div class="blog-card-top">
+          <span class="tag">Blog</span>
+          <p class="blog-title">The Economics of AI Reasoning</p>
+          <p class="blog-desc">Deploy frontier models at production scale with world-record speeds — no compromises.</p>
+        </div>
+        <a href="#" class="blog-link">
+          <span class="blog-arrow"><svg viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h10M8 3l4 4-4 4"/></svg></span>
+          <span class="blog-link-text">Read the article</span>
+        </a>
+      </div>
+      <div class="blog-divider"></div>
+      <div class="blog-card">
+        <div class="blog-card-top">
+          <span class="tag">Press Release</span>
+          <p class="blog-title">Cerebras Systems Sets Date of First-Quarter 2026 Financial Results</p>
+          <p class="blog-desc">Stay up to date with the latest financial news and milestones.</p>
+        </div>
+        <a href="#" class="blog-link">
+          <span class="blog-arrow"><svg viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h10M8 3l4 4-4 4"/></svg></span>
+          <span class="blog-link-text">Read the press release</span>
+        </a>
+      </div>
+      <div class="blog-divider"></div>
+      <div class="blog-card">
+        <div class="blog-card-top">
+          <span class="tag">Blog</span>
+          <p class="blog-title">Which is faster: Kimi K2.6 on Cerebras or Gemini Flash?</p>
+          <p class="blog-desc">A head-to-head benchmark — see how Cerebras stacks up.</p>
+        </div>
+        <a href="#" class="blog-link">
+          <span class="blog-arrow"><svg viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h10M8 3l4 4-4 4"/></svg></span>
+          <span class="blog-link-text">Read the article</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="logos-section">
+    <div class="logos-track">
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/b40f0e66-49a1-415f-a45e-5d63dd61eae6" alt="W&B"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/55f989a7-af07-4fa1-8267-4b689cfc9c53" alt="Partner"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/733d0eba-8e4f-48de-a469-003bfdb012f7" alt="Aleph Alpha"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/25acab90-f92a-4307-b0ca-9cb29d747af1" alt="Nasdaq"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/b933a170-d7e6-4379-bb4f-1ea90ae3f26b" alt="LangChain"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/eec8cfbe-eb8e-4113-81ef-d03fce42030b" alt="Partner"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/d408a286-8416-4078-b497-57deaac8a455" alt="Docker"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/859cc87d-42df-48c9-9940-21c0eba1fa5e" alt="GSK"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/578f0ca9-e82c-4611-8fdc-081712ca3262" alt="Meter"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/6a0e6dac-97dc-4545-879a-623ec118bad0" alt="LlamaIndex"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/c8034897-1fe5-464d-a592-b3829d553175" alt="LiveKit"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/a0d863ac-1bff-4b0a-a6d1-9606bda89dc5" alt="Partner"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/b40f0e66-49a1-415f-a45e-5d63dd61eae6" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/55f989a7-af07-4fa1-8267-4b689cfc9c53" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/733d0eba-8e4f-48de-a469-003bfdb012f7" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/25acab90-f92a-4307-b0ca-9cb29d747af1" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/b933a170-d7e6-4379-bb4f-1ea90ae3f26b" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/eec8cfbe-eb8e-4113-81ef-d03fce42030b" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/d408a286-8416-4078-b497-57deaac8a455" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/859cc87d-42df-48c9-9940-21c0eba1fa5e" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/578f0ca9-e82c-4611-8fdc-081712ca3262" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/6a0e6dac-97dc-4545-879a-623ec118bad0" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/c8034897-1fe5-464d-a592-b3829d553175" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/a0d863ac-1bff-4b0a-a6d1-9606bda89dc5" alt="" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <script>
+    const TOTAL = 3;
+    let current = 0;
+    let autoTimer = null;
+
+    const slides     = Array.from(document.querySelectorAll('.slide'));
+    const panels     = Array.from(document.querySelectorAll('.panel-slide'));
+    const ticks      = Array.from(document.querySelectorAll('.progress-tick'));
+
+    function goTo(index) {
+      const prev = current;
+      current = ((index % TOTAL) + TOTAL) % TOTAL;
+
+      slides.forEach((s, i) => s.classList.toggle('active', i === current));
+
+      // panel shows info for the NEXT slide
+      const nextIndex = (current + 1) % TOTAL;
+      panels.forEach((p, i) => {
+        p.classList.toggle('active', +p.dataset.for === current);
+      });
+
+      // ticks
+      ticks.forEach((t, i) => {
+        const fill = t.querySelector('.progress-tick-fill');
+        if (i === current) {
+          t.classList.add('active');
+          fill.style.animation = 'none';
+          fill.offsetHeight;
+          fill.style.animation = '';
+        } else {
+          t.classList.remove('active');
+          fill.style.animation = 'none';
+        }
+      });
+
+      resetAuto();
+    }
+
+    function next() { goTo(current + 1); }
+    function prev() { goTo(current - 1); }
+
+    document.getElementById('nextBtn').addEventListener('click', next);
+    document.getElementById('prevBtn').addEventListener('click', prev);
+
+    ticks.forEach(t => t.addEventListener('click', () => goTo(+t.dataset.i)));
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight') next();
+      if (e.key === 'ArrowLeft')  prev();
+    });
+
+    function startAuto() { autoTimer = setInterval(next, 6000); }
+    function resetAuto() { clearInterval(autoTimer); startAuto(); }
+
+    const hero = document.getElementById('hero');
+    hero.addEventListener('mouseenter', () => clearInterval(autoTimer));
+    hero.addEventListener('mouseleave', startAuto);
+
+    // init
+    goTo(0);
+  </script>
+</body>
+</html>

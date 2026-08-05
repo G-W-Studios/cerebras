@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cerebras — The world's fastest AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Sometype+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange: #F15A29;
+      --orange-hover: #F74E11;
+      --mandarin: #FF985D;
+      --ink: #1A1A1A;
+      --cream: #F7F5F2;
+      --cream-alt: #ECE8E4;
+      --gray-200: #CCCAC8;
+      --bg-dark: #240a06;
+      --radius-sm: 2px;
+      --radius-lg: 40px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg-dark);
+      color: #fff;
+      font-family: 'Manrope', sans-serif;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── NAVIGATION ─────────────────────────────────────────────── */
+    .nav-wrap {
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      height: 108px;
+      background: #fff;
+    }
+
+    /* inner content fills the white bar with backdrop-blur + pill radius */
+    .nav {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 32px 48px;
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border-radius: 100px;
+    }
+
+    .nav-logo {
+      width: 105px;
+      height: 44px;
+      object-fit: contain;
+      object-position: left center;
+      display: block;
+      flex-shrink: 0;
+    }
+
+    /* nav links are centered absolutely */
+    .nav-menu {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-menu a {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--ink);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+      transition: color 150ms ease;
+    }
+    .nav-menu a:hover { color: var(--orange); }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      height: 40px;
+      padding: 0 18px;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      font-family: 'Sometype Mono', monospace;
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: background 150ms ease, transform 80ms ease;
+    }
+    .btn:active { transform: scale(0.98); }
+
+    .btn-ghost {
+      background: var(--cream-alt);
+      color: var(--ink);
+    }
+    .btn-ghost:hover { background: #dbd7d1; }
+
+    .btn-dark {
+      background: var(--ink);
+      color: #fff;
+    }
+    .btn-dark:hover { background: #2d2d2d; }
+
+    .btn-primary {
+      background: var(--orange);
+      color: var(--ink);
+    }
+    .btn-primary:hover { background: var(--orange-hover); }
+
+    .btn-gradient {
+      background: linear-gradient(154deg, #FFE365 17%, #FB490F 89%);
+      color: var(--ink);
+    }
+    .btn-gradient:hover { opacity: 0.92; }
+
+    /* icon-only search button */
+    .btn-icon {
+      width: 40px;
+      padding: 0;
+    }
+    .btn-icon svg { width: 16px; height: 16px; }
+
+    /* ─── HERO SCROLL STAGE ──────────────────────────────────────── */
+    /* The stage is 300vh tall — 100vh per slide.
+       The .hero inside it is sticky, pinned to the top until the
+       stage scrolls past, at which point it releases naturally. */
+    .hero-scroll-stage {
+      position: relative;
+      height: 300vh;
+    }
+
+    .hero {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--bg-dark);
+    }
+
+    /* ambient orange glow — applied per-slide via .slide::before overrides */
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 65% 40%, rgba(200, 80, 0, 0.45) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 80% at 20% -10%, rgba(160, 50, 0, 0.3) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* chip-surface grid texture overlay */
+    .hero-texture {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.025) 39px, rgba(255,255,255,0.025) 40px),
+        repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.025) 39px, rgba(255,255,255,0.025) 40px);
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* ─── SLIDES ─────────────────────────────────────────────────── */
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      /* slides 1+ start off-screen below */
+      transform: translateY(100%);
+      transition: transform 600ms cubic-bezier(.22, 1, .36, 1);
+      z-index: 2;
+    }
+
+    /* slide 0 is the base — always visible, no transform */
+    .slide[data-slide="0"] {
+      transform: translateY(0);
+      z-index: 2;
+    }
+
+    /* when a slide is "active" it sits at translateY(0) */
+    .slide.is-active {
+      transform: translateY(0) !important;
+    }
+
+    /* slides that have been passed and the next one covers them */
+    .slide.is-below {
+      transform: translateY(-8%) !important;
+      opacity: 0;
+      transition: transform 600ms cubic-bezier(.22, 1, .36, 1), opacity 400ms ease;
+    }
+
+    /* ─── SLIDE INNER LAYOUT ──────────────────────────────────────── */
+    .slide-inner {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 64px;
+      width: 100%;
+      max-width: 1600px;
+      padding: 0 78px;
+    }
+
+    .slide-text {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 48px;
+    }
+
+    .hero-headline {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 300;
+      font-size: clamp(44px, 5vw, 72px);
+      line-height: 0.92;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+
+    .hero-headline .gradient-text {
+      background: linear-gradient(90deg, #FFCE5C 24.5%, #F76D32 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-cta { display: flex; }
+
+    /* ─── SLIDE 1: chip comparison (copied verbatim) ──────────────── */
+    .hero-visual {
+      flex-shrink: 0;
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      gap: 80px;
+    }
+
+    .chip-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .chip-wafer {
+      position: relative;
+      width: 380px;
+      height: 380px;
+      flex-shrink: 0;
+      box-shadow: 0 -10px 140px -6px rgba(187,100,0,0.6);
+    }
+    .chip-wafer img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .chip-wafer-overlay1 {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(224deg, rgba(241,89,42,0) 12%, rgba(241,89,42,0.14) 46%, rgba(241,89,42,0) 87%);
+      mix-blend-mode: color-burn;
+    }
+    .chip-wafer-overlay2 {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(222deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.16) 84%);
+    }
+
+    .chip-b200 {
+      display: flex;
+      gap: 3.81px;
+      align-items: center;
+    }
+    .chip-b200-tile {
+      width: 38.1px;
+      height: 50.2px;
+      position: relative;
+      overflow: hidden;
+    }
+    .chip-b200-tile img {
+      position: absolute;
+      height: 119.51%;
+      top: -7.12%;
+      width: 228.89%;
+    }
+    .chip-b200-tile:first-child img { left: -9.25%; }
+    .chip-b200-tile:last-child  img { left: -113.19%; }
+
+    .chip-ruler svg { display: block; }
+
+    .chip-label {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 600;
+      font-size: 16px;
+      line-height: 1.3;
+      letter-spacing: -0.01em;
+      color: #fff;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    /* ─── SLIDE 2: multimodal glow square ────────────────────────── */
+    .slide-2-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 70% 50%, rgba(241,90,41,0.25) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 60% at 30% 20%, rgba(160, 50, 0, 0.2) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .glow-square {
+      flex-shrink: 0;
+      width: 280px;
+      height: 280px;
+      background: radial-gradient(circle at 40% 60%, rgba(241,90,41,0.3), transparent);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 2px;
+      box-shadow: 0 0 80px rgba(241,90,41,0.25);
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 24px;
+      padding: 40px;
+    }
+
+    .glow-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 72px;
+      height: 72px;
+      background: rgba(241,90,41,0.18);
+      border: 1px solid rgba(241,90,41,0.35);
+      border-radius: 2px;
+      font-family: 'Sometype Mono', monospace;
+      font-weight: 600;
+      font-size: 12px;
+      color: var(--orange);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      transition: background 200ms ease;
+    }
+    .glow-icon:hover {
+      background: rgba(241,90,41,0.28);
+    }
+
+    /* ─── SLIDE 3: speed metric ───────────────────────────────────── */
+    .slide-3-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 50% 70% at 50% 60%, rgba(241,90,41,0.2) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    .speed-visual {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .speed-number {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 300;
+      font-size: 96px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      background: linear-gradient(90deg, #FFCE5C 24.5%, #F76D32 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .speed-unit {
+      font-family: 'Sometype Mono', monospace;
+      font-weight: 600;
+      font-size: 13px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .speed-compare {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 400;
+      font-size: 14px;
+      color: rgba(255,255,255,0.35);
+      letter-spacing: -0.01em;
+      margin-top: 4px;
+    }
+
+    /* ─── PROGRESS BAR (right edge) ──────────────────────────────── */
+    .progress-bar {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .progress-segment {
+      flex: 1;
+      background: rgba(255,255,255,0.1);
+      transition: background 400ms ease;
+    }
+
+    .progress-segment.is-active {
+      background: var(--orange);
+    }
+
+    /* ─── SCROLL HINT ─────────────────────────────────────────────── */
+    .scroll-hint {
+      position: absolute;
+      bottom: 36px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      opacity: 1;
+      transition: opacity 500ms ease;
+      pointer-events: none;
+    }
+
+    .scroll-hint.is-hidden {
+      opacity: 0;
+    }
+
+    .scroll-hint-label {
+      font-family: 'Sometype Mono', monospace;
+      font-weight: 600;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+    }
+
+    .scroll-hint-arrow {
+      width: 16px;
+      height: 16px;
+      animation: bounce-down 1.6s ease-in-out infinite;
+    }
+
+    @keyframes bounce-down {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(5px); }
+    }
+
+    /* ─── BLOG SECTION ───────────────────────────────────────────── */
+    .blog-section {
+      padding: 40px 78px 80px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .blog-grid {
+      display: grid;
+      grid-template-columns: 1fr 1px 1fr 1px 1fr;
+      gap: 0;
+      align-items: stretch;
+    }
+
+    .blog-divider {
+      background: rgba(255, 255, 255, 0.12);
+      align-self: stretch;
+      transform: scaleY(0.25);
+      transform-origin: center;
+      transition: transform 400ms cubic-bezier(.22,1,.36,1), background 400ms cubic-bezier(.22,1,.36,1);
+    }
+
+    .blog-card:hover + .blog-divider,
+    .blog-divider:has(+ .blog-card:hover) {
+      transform: scaleY(1);
+      background: rgba(255, 255, 255, 0.28);
+    }
+
+    .blog-card {
+      padding: 0 36px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 220px;
+      gap: 20px;
+      cursor: pointer;
+    }
+    .blog-card:first-child { padding-left: 0; }
+    .blog-card:last-child  { padding-right: 0; }
+
+    .blog-card-top {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 8px;
+      border-radius: var(--radius-sm);
+      background: var(--mandarin);
+      font-family: 'Sometype Mono', monospace;
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--ink);
+      align-self: flex-start;
+      white-space: nowrap;
+    }
+
+    .blog-title {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 500;
+      font-size: 22px;
+      line-height: 1.3;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+
+    .blog-desc {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 500;
+      font-size: 15px;
+      line-height: 1.5;
+      color: var(--gray-200);
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 220ms cubic-bezier(.22,1,.36,1), transform 220ms cubic-bezier(.22,1,.36,1);
+    }
+
+    .blog-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 220ms cubic-bezier(.22,1,.36,1) 40ms, transform 220ms cubic-bezier(.22,1,.36,1) 40ms;
+      text-decoration: none;
+      margin-top: auto;
+    }
+
+    .blog-card:hover .blog-desc,
+    .blog-card:hover .blog-link {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .blog-arrow {
+      width: 28px;
+      height: 28px;
+      background: var(--orange);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 150ms ease;
+    }
+    .blog-card:hover .blog-arrow { background: var(--orange-hover); }
+
+    .blog-arrow svg { width: 14px; height: 14px; }
+
+    .blog-link-text {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 600;
+      font-size: 15px;
+      color: #fff;
+      letter-spacing: -0.01em;
+    }
+
+    /* ─── LOGO STRIP ─────────────────────────────────────────────── */
+    .logos-section {
+      padding: 60px 0 56px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .logos-section::before,
+    .logos-section::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 120px;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .logos-section::before {
+      left: 0;
+      background: linear-gradient(to right, var(--bg-dark), transparent);
+    }
+    .logos-section::after {
+      right: 0;
+      background: linear-gradient(to left, var(--bg-dark), transparent);
+    }
+
+    .logos-track {
+      display: flex;
+      align-items: center;
+      gap: 56px;
+      width: max-content;
+      animation: marquee 32s linear infinite;
+    }
+    .logos-track:hover { animation-play-state: paused; }
+
+    @keyframes marquee {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    .logo-item {
+      flex-shrink: 0;
+      height: 52px;
+      display: flex;
+      align-items: center;
+    }
+
+    .logo-item img {
+      height: 100%;
+      width: auto;
+      max-width: 110px;
+      object-fit: contain;
+      filter: brightness(0) invert(1);
+      opacity: 0.55;
+      transition: opacity 200ms ease;
+      display: block;
+    }
+    .logo-item img:hover { opacity: 0.9; }
+  </style>
+</head>
+<body>
+
+  <!-- ─── NAVIGATION ─────────────────────────────────────────────── -->
+  <div class="nav-wrap">
+    <nav class="nav">
+      <div style="width:206px;flex-shrink:0;">
+        <img
+          class="nav-logo"
+          src="https://www.figma.com/api/mcp/asset/e60e6b9c-7ea8-4c80-a4c1-23fd77250838"
+          alt="Cerebras"
+        >
+      </div>
+
+      <ul class="nav-menu">
+        <li><a href="#">Products</a></li>
+        <li><a href="#">Customers</a></li>
+        <li><a href="#">Developers</a></li>
+        <li><a href="#">Resources</a></li>
+        <li><a href="#">Pricing</a></li>
+        <li><a href="#">Company</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <button class="btn btn-ghost btn-icon" aria-label="Search" style="width:44px;height:44px;padding:0;">
+          <img src="https://www.figma.com/api/mcp/asset/a4a24bbb-044c-469e-a612-b979f09262b4" alt="" style="width:16px;height:16px;display:block;">
+        </button>
+        <a href="#" class="btn btn-dark" style="height:44px;">Contact us</a>
+        <a href="#" class="btn" style="height:44px;background:linear-gradient(154.46deg,#FFE365 17.3%,#FB490F 89.3%);color:var(--ink);">Get started</a>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ─── HERO SCROLL STAGE ──────────────────────────────────────── -->
+  <div class="hero-scroll-stage">
+    <section class="hero" id="hero">
+      <div class="hero-texture"></div>
+
+      <!-- Progress bar (3 segments) -->
+      <div class="progress-bar" id="progressBar">
+        <div class="progress-segment is-active" data-seg="0"></div>
+        <div class="progress-segment" data-seg="1"></div>
+        <div class="progress-segment" data-seg="2"></div>
+      </div>
+
+      <!-- Scroll hint (slide 1 only) -->
+      <div class="scroll-hint" id="scrollHint">
+        <span class="scroll-hint-label">Scroll</span>
+        <svg class="scroll-hint-arrow" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 2v10M3 8l5 6 5-6" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      <!-- ── SLIDE 0: chip comparison ─────────────────────────────── -->
+      <div class="slide" data-slide="0" id="slide-0">
+        <div class="slide-inner">
+          <div class="slide-text">
+            <h1 class="hero-headline">
+              The world's <span class="gradient-text">fastest ai</span><br>
+              Runs on the <span class="gradient-text">world's biggest chip</span>
+            </h1>
+            <div class="hero-cta">
+              <a href="#" class="btn btn-primary" style="font-size:13px; height:44px; padding:0 22px;">Learn more</a>
+            </div>
+          </div>
+
+          <!-- Chip size comparison — copied verbatim -->
+          <div class="hero-visual">
+            <div class="chip-item">
+              <div class="chip-wafer">
+                <img src="https://www.figma.com/api/mcp/asset/50a31ade-6ec2-45f7-bdd3-494bef8f6a7b" alt="Cerebras WSE-3 wafer">
+                <div class="chip-wafer-overlay1"></div>
+                <div class="chip-wafer-overlay2"></div>
+              </div>
+              <div class="chip-ruler">
+                <svg id="ruler-wse3" height="18" style="display:block;"></svg>
+              </div>
+              <div class="chip-label">CEREBRAS<br>Wafer Scale Engine 3</div>
+            </div>
+
+            <div class="chip-item">
+              <div class="chip-b200">
+                <div class="chip-b200-tile">
+                  <img src="https://www.figma.com/api/mcp/asset/522efbf2-1e02-4f37-adfd-d0ab929d16c9" alt="">
+                </div>
+                <div class="chip-b200-tile">
+                  <img src="https://www.figma.com/api/mcp/asset/522efbf2-1e02-4f37-adfd-d0ab929d16c9" alt="">
+                </div>
+              </div>
+              <div class="chip-ruler">
+                <svg id="ruler-b200" height="18" style="display:block;"></svg>
+              </div>
+              <div class="chip-label">NVIDIA GPU<br>B200</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SLIDE 1: multimodal ────────────────────────────────────── -->
+      <div class="slide" data-slide="1" id="slide-1">
+        <!-- per-slide ambient bg -->
+        <div class="slide-2-bg"></div>
+        <div class="slide-inner">
+          <div class="slide-text">
+            <h1 class="hero-headline">
+              The fastest <span class="gradient-text">inference</span><br>
+              is now <span class="gradient-text">multimodal</span>
+            </h1>
+            <div class="hero-cta">
+              <a href="#" class="btn btn-primary" style="font-size:13px; height:44px; padding:0 22px;">Explore models</a>
+            </div>
+          </div>
+
+          <!-- CSS-only glow square -->
+          <div class="glow-square">
+            <div class="glow-icon">&lt;/&gt;</div>
+            <div class="glow-icon">AI</div>
+            <div class="glow-icon">&#9733;</div>
+            <div class="glow-icon">&#11041;</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SLIDE 2: speed metric ──────────────────────────────────── -->
+      <div class="slide" data-slide="2" id="slide-2">
+        <div class="slide-3-bg"></div>
+        <div class="slide-inner">
+          <div class="slide-text">
+            <h1 class="hero-headline">
+              <span class="gradient-text">1,500+</span><br>
+              tokens per second
+            </h1>
+            <div class="hero-cta">
+              <a href="#" class="btn btn-primary" style="font-size:13px; height:44px; padding:0 22px;">See benchmarks</a>
+            </div>
+          </div>
+
+          <!-- Speed metric visual -->
+          <div class="speed-visual">
+            <div class="speed-number">1,500+</div>
+            <div class="speed-unit">Tokens&nbsp;/&nbsp;Second</div>
+            <div class="speed-compare">10&times; faster than GPU</div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </div><!-- /.hero-scroll-stage -->
+
+  <!-- ─── BLOG CARDS ─────────────────────────────────────────────── -->
+  <div class="blog-section">
+    <div class="blog-grid">
+
+      <div class="blog-card">
+        <div class="blog-card-top">
+          <span class="tag">Blog</span>
+          <p class="blog-title">The Economics of AI Reasoning</p>
+          <p class="blog-desc">Deploy frontier models at production scale with world-record speeds — no compromises on model size or precision.</p>
+        </div>
+        <a href="#" class="blog-link">
+          <span class="blog-arrow">
+            <svg viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 7h10M8 3l4 4-4 4"/>
+            </svg>
+          </span>
+          <span class="blog-link-text">Read the article</span>
+        </a>
+      </div>
+
+      <div class="blog-divider"></div>
+
+      <div class="blog-card">
+        <div class="blog-card-top">
+          <span class="tag">Press Release</span>
+          <p class="blog-title">Cerebras Systems Sets Date of First-Quarter 2026 Financial Results</p>
+          <p class="blog-desc">Stay up to date with the latest financial news and milestones from Cerebras Systems.</p>
+        </div>
+        <a href="#" class="blog-link">
+          <span class="blog-arrow">
+            <svg viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 7h10M8 3l4 4-4 4"/>
+            </svg>
+          </span>
+          <span class="blog-link-text">Read the press release</span>
+        </a>
+      </div>
+
+      <div class="blog-divider"></div>
+
+      <div class="blog-card">
+        <div class="blog-card-top">
+          <span class="tag">Blog</span>
+          <p class="blog-title">Which is faster: Kimi K2.6 on Cerebras or Gemini Flash?</p>
+          <p class="blog-desc">A head-to-head benchmark — see how Cerebras inference stacks up against the competition.</p>
+        </div>
+        <a href="#" class="blog-link">
+          <span class="blog-arrow">
+            <svg viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 7h10M8 3l4 4-4 4"/>
+            </svg>
+          </span>
+          <span class="blog-link-text">Read the article</span>
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ─── LOGO MARQUEE ───────────────────────────────────────────── -->
+  <div class="logos-section">
+    <div class="logos-track">
+      <!-- set A -->
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/b40f0e66-49a1-415f-a45e-5d63dd61eae6" alt="W&B"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/55f989a7-af07-4fa1-8267-4b689cfc9c53" alt="Partner"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/733d0eba-8e4f-48de-a469-003bfdb012f7" alt="Aleph Alpha"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/25acab90-f92a-4307-b0ca-9cb29d747af1" alt="Nasdaq"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/b933a170-d7e6-4379-bb4f-1ea90ae3f26b" alt="LangChain"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/eec8cfbe-eb8e-4113-81ef-d03fce42030b" alt="Partner"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/d408a286-8416-4078-b497-57deaac8a455" alt="Docker"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/859cc87d-42df-48c9-9940-21c0eba1fa5e" alt="GSK"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/578f0ca9-e82c-4611-8fdc-081712ca3262" alt="Meter"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/6a0e6dac-97dc-4545-879a-623ec118bad0" alt="LlamaIndex"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/c8034897-1fe5-464d-a592-b3829d553175" alt="LiveKit"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/a0d863ac-1bff-4b0a-a6d1-9606bda89dc5" alt="Partner"></div>
+      <!-- set B (duplicate for seamless loop) -->
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/b40f0e66-49a1-415f-a45e-5d63dd61eae6" alt="W&B" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/55f989a7-af07-4fa1-8267-4b689cfc9c53" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/733d0eba-8e4f-48de-a469-003bfdb012f7" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/25acab90-f92a-4307-b0ca-9cb29d747af1" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/b933a170-d7e6-4379-bb4f-1ea90ae3f26b" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/eec8cfbe-eb8e-4113-81ef-d03fce42030b" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/d408a286-8416-4078-b497-57deaac8a455" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/859cc87d-42df-48c9-9940-21c0eba1fa5e" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/578f0ca9-e82c-4611-8fdc-081712ca3262" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/6a0e6dac-97dc-4545-879a-623ec118bad0" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/c8034897-1fe5-464d-a592-b3829d553175" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/a0d863ac-1bff-4b0a-a6d1-9606bda89dc5" alt="" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <script>
+    // ─── RULER (verbatim from source) ─────────────────────────────
+    function drawRuler(svgId, totalWidth) {
+      const svg = document.getElementById(svgId);
+      if (!svg) return;
+      svg.setAttribute('width', totalWidth);
+      svg.setAttribute('viewBox', '0 0 ' + totalWidth + ' 18');
+
+      const pitch = 4.6;
+      const count = Math.round(totalWidth / pitch);
+      const actualPitch = totalWidth / count;
+      const stroke = 'rgba(255,255,255,0.55)';
+
+      let d = '';
+      for (let i = 0; i <= count; i++) {
+        const x = i * actualPitch;
+        const isEdge = (i === 0 || i === count);
+        const h = isEdge ? 18 : 12;
+        const y1 = isEdge ? 0 : 3;
+        d += `M${x.toFixed(2)},${y1} L${x.toFixed(2)},${(y1 + h).toFixed(2)} `;
+      }
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', d);
+      path.setAttribute('stroke', stroke);
+      path.setAttribute('stroke-width', '1');
+      path.setAttribute('fill', 'none');
+      svg.appendChild(path);
+    }
+
+    drawRuler('ruler-wse3', 380);
+    drawRuler('ruler-b200', 80);
+
+    // ─── SCROLL-JACKED HERO ───────────────────────────────────────
+    (function () {
+      const stage      = document.querySelector('.hero-scroll-stage');
+      const slides     = Array.from(document.querySelectorAll('.slide'));
+      const segments   = Array.from(document.querySelectorAll('.progress-segment'));
+      const scrollHint = document.getElementById('scrollHint');
+      const TOTAL      = slides.length; // 3
+
+      let currentSlide = 0;
+      let hintDismissed = false;
+
+      function getSlideIndex() {
+        const stageRect  = stage.getBoundingClientRect();
+        // stageRect.top goes from 0 (top of stage flush with viewport top)
+        // down to -(300vh - 100vh) = -200vh as we scroll through.
+        // We want progress 0→1 across the full 200vh of "extra" scroll.
+        const stageTop   = stage.offsetTop; // px from doc top
+        const scrolled   = window.scrollY - stageTop;
+        const segHeight  = window.innerHeight; // 100vh per slide
+        const raw        = scrolled / segHeight;
+        return Math.min(Math.max(Math.floor(raw), 0), TOTAL - 1);
+      }
+
+      function applySlide(idx) {
+        if (idx === currentSlide) return;
+        currentSlide = idx;
+        update();
+      }
+
+      function update() {
+        slides.forEach((slide, i) => {
+          slide.classList.remove('is-active', 'is-below');
+          if (i < currentSlide) {
+            // already visited — push slightly up and fade
+            slide.classList.add('is-below');
+          } else if (i === currentSlide) {
+            slide.classList.add('is-active');
+          }
+          // slides > currentSlide remain at translateY(100%) naturally
+        });
+
+        // progress bar
+        segments.forEach((seg, i) => {
+          seg.classList.toggle('is-active', i <= currentSlide);
+        });
+      }
+
+      // initialise: slide 0 is already positioned correctly via CSS data-slide="0"
+      // Make slides 1+ start off-screen and slide 0 visible
+      slides.forEach((slide, i) => {
+        if (i === 0) {
+          slide.classList.add('is-active');
+        }
+      });
+
+      window.addEventListener('scroll', function () {
+        const idx = getSlideIndex();
+
+        // dismiss scroll hint on first scroll
+        if (!hintDismissed && window.scrollY > 10) {
+          hintDismissed = true;
+          scrollHint.classList.add('is-hidden');
+        }
+
+        applySlide(idx);
+      }, { passive: true });
+    })();
+  </script>
+</body>
+</html>

@@ -508,6 +508,69 @@
       margin-top: 40px; opacity: 0.5;
     }
 
+    /* ════════════════════════════════
+       GRAPH 7: Inference vs Non-Inference (dark, stacked horizontal bars)
+       ════════════════════════════════ */
+    #g7 .stack-chart { display: flex; flex-direction: column; gap: 40px; }
+    #g7 .stack-item {
+      opacity: 0; transform: translateY(8px);
+      transition: opacity 0.4s cubic-bezier(0.22,1,0.36,1), transform 0.4s cubic-bezier(0.22,1,0.36,1);
+    }
+    #g7 .stack-item.visible { opacity: 1; transform: translateY(0); }
+    #g7 .stack-chart:has(.stack-item:hover) .stack-item:not(:hover) { opacity: 0.4; transition: opacity 0.2s ease; }
+    #g7 .stack-header {
+      display: flex; justify-content: space-between; align-items: baseline;
+      gap: 12px; flex-wrap: wrap; margin-bottom: 10px;
+    }
+    #g7 .stack-title {
+      font-family: var(--font-sans);
+      font-weight: 700; font-size: 16px;
+      color: var(--white);
+      letter-spacing: -0.02em;
+    }
+    #g7 .stack-sub {
+      font-family: var(--font-mono);
+      font-weight: 600; font-size: 11px;
+      color: var(--grey-500);
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      margin-top: 3px;
+    }
+    #g7 .stack-callout {
+      font-family: var(--font-mono);
+      font-weight: 600; font-size: 12px;
+      color: var(--orange-400);
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+    #g7 .stack-bar-row { display: flex; align-items: center; gap: 14px; }
+    #g7 .stack-bar { display: flex; height: 40px; border-radius: 4px; overflow: hidden; flex-shrink: 0; }
+    #g7 .stack-seg {
+      height: 100%; position: relative;
+      transform-origin: left center; transform: scaleX(0);
+      transition: transform 0.65s cubic-bezier(0.22,1,0.36,1), filter 0.2s ease;
+    }
+    #g7 .stack-seg.animate { transform: scaleX(1); }
+    #g7 .stack-seg.seg-inference { background: var(--gradient-bar-h); }
+    #g7 .stack-seg.seg-noninference { background: var(--grey-700); }
+    #g7 .stack-bar-row:hover .stack-seg { filter: brightness(1.15); }
+    #g7 .stack-seg-label {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      font-family: var(--font-mono); font-weight: 600; font-size: 12px;
+      color: var(--white); text-transform: uppercase; letter-spacing: 0.02em;
+      white-space: nowrap;
+      opacity: 0; transition: opacity 0.3s ease 0.4s;
+    }
+    #g7 .stack-seg.animate .stack-seg-label { opacity: 1; }
+    #g7 .stack-value {
+      font-family: var(--font-mono); font-weight: 600; font-size: 13px;
+      color: var(--white); white-space: nowrap;
+      opacity: 0; transform: translateX(-4px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    #g7 .stack-value.visible { opacity: 1; transform: translateX(0); }
+
     /* ── Shared divider + category labels ── */
     .chart-divider {
       height: 1px;
@@ -652,6 +715,15 @@
       #g6 .wse-bar-wrap               { height: 36px; }
       #g6 .wse-value, #g6 .h-value    { font-size: 13px; }
       #g6 .wse-label-inside           { font-size: 12px; }
+
+      /* G7 */
+      #g7 .stack-chart     { gap: 28px; }
+      #g7 .stack-title     { font-size: 13px; }
+      #g7 .stack-bar       { height: 28px; }
+      #g7 .stack-bar-row   { gap: 8px; }
+      #g7 .stack-value     { font-size: 11px; }
+      #g7 .stack-seg-label { font-size: 10px; left: 8px; }
+      #g7 .stack-callout   { font-size: 10px; }
     }
   </style>
 </head>
@@ -665,6 +737,7 @@
     <button class="tab-btn" data-tab="g4">Llama CePO</button>
     <button class="tab-btn" data-tab="g5">Market Share</button>
     <button class="tab-btn" data-tab="g6">WSE-3 vs GPU</button>
+    <button class="tab-btn" data-tab="g7">GDP-Val</button>
   </nav>
 
   <!-- ══════════════════════════════════════
@@ -1130,6 +1203,66 @@
     </div>
   </div>
 
+  <!-- ══════════════════════════════════════
+       GRAPH 7: Inference vs Non-Inference — GDP-Val
+       ══════════════════════════════════════ -->
+  <div id="g7" class="graph-panel">
+    <div class="graph-card dark">
+      <p class="graph-title">Inference vs. Non-Inference — GDP-Val</p>
+      <p class="graph-subtitle">Mean wall-clock components across 6 quality-matched tasks</p>
+
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-swatch" style="background:var(--gradient-bar-h)"></div>
+          <span class="legend-label">Model-request time (inference)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-swatch" style="background:var(--grey-700)"></div>
+          <span class="legend-label">Non-inference</span>
+        </div>
+      </div>
+
+      <div class="stack-chart">
+        <!-- Ultrafast: request 68.1s, non-inf 14.9s, total 83.0s. Scale 1.212px/s -->
+        <div class="stack-item">
+          <div class="stack-header">
+            <div>
+              <div class="stack-title">GPT-5.6 Sol Ultrafast</div>
+              <div class="stack-sub">Model request 68.1 s &middot; Non-inference 14.9 s</div>
+            </div>
+            <span class="stack-callout">&#9889; 5.6x faster than Sol Standard</span>
+          </div>
+          <div class="stack-bar-row">
+            <div class="stack-bar">
+              <div class="stack-seg seg-inference" style="width:83px"></div>
+              <div class="stack-seg seg-noninference" style="width:18px"></div>
+            </div>
+            <span class="stack-value">83.0 s total</span>
+          </div>
+        </div>
+
+        <!-- Standard: request 450s (7.5 min), non-inf 14.2s, total 462s (7.7 min) -->
+        <div class="stack-item">
+          <div class="stack-header">
+            <div>
+              <div class="stack-title">GPT-5.6 Sol</div>
+              <div class="stack-sub">Model request 7.5 min &middot; Non-inference 14.2 s</div>
+            </div>
+          </div>
+          <div class="stack-bar-row">
+            <div class="stack-bar">
+              <div class="stack-seg seg-inference" style="width:543px">
+                <span class="stack-seg-label">7.5 min</span>
+              </div>
+              <div class="stack-seg seg-noninference" style="width:17px"></div>
+            </div>
+            <span class="stack-value">7.7 min total</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ── Tab switching ──────────────────────────────────────────
     const tabs = document.querySelectorAll('.tab-btn');
@@ -1150,7 +1283,7 @@
     // ── Animation engine — all JS-driven, no CSS @keyframes ───
     function animatePanel(panel) {
       // Reset everything
-      panel.querySelectorAll('.bar-group, .h-row, .metric-block').forEach(el => {
+      panel.querySelectorAll('.bar-group, .h-row, .metric-block, .stack-item').forEach(el => {
         el.classList.remove('visible');
       });
       panel.querySelectorAll('.bar').forEach(b => b.classList.remove('animate'));
@@ -1158,6 +1291,8 @@
       panel.querySelectorAll('.wse-inner').forEach(w => w.classList.remove('animate'));
       panel.querySelectorAll('.h-value').forEach(v => v.classList.remove('visible'));
       panel.querySelectorAll('.chart-divider, .category-labels').forEach(el => el.classList.remove('visible'));
+      panel.querySelectorAll('.stack-seg').forEach(s => s.classList.remove('animate'));
+      panel.querySelectorAll('.stack-value').forEach(v => v.classList.remove('visible'));
 
       // Stagger helper: fade a list of elements in with a base delay + per-item offset
       function staggerVisible(els, baseDelay, offset) {
@@ -1201,6 +1336,17 @@
           if (gpuBar) gpuBar.classList.add('animate');
           setTimeout(() => { if (val) val.classList.add('visible'); }, 550);
         }, blockDelay);
+      });
+
+      // ── G7: stacked horizontal bars
+      const stackItems = panel.querySelectorAll('.stack-item');
+      stackItems.forEach((item, si) => {
+        const itemDelay = 150 + si * 150;
+        setTimeout(() => {
+          item.classList.add('visible');
+          item.querySelectorAll('.stack-seg').forEach(seg => seg.classList.add('animate'));
+          setTimeout(() => item.querySelectorAll('.stack-value').forEach(v => v.classList.add('visible')), 550);
+        }, itemDelay);
       });
 
       // ── Divider + category labels (G1)

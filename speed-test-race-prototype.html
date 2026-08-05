@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cerebras — Speed Test Race Prototype</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Sometype+Mono:wght@400;600&display=swap');
+
+  :root{
+    --ink:#1A1A1A;
+    --grey-700:#4D4C4B;
+    --grey-500:#807E7D;
+    --grey-300:#CCCAC8;
+    --paper-50:#F7F5F2;
+    --white:#FFFFFF;
+    --orange:#F15A29;
+    --orange-bright:#F74E11;
+    --border:rgba(0,0,0,0.12);
+    --font-sans:"Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-mono:"Sometype Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--paper-50); color:var(--ink); font-family:var(--font-sans);
+    -webkit-font-smoothing:antialiased; padding:48px 24px 100px;
+  }
+
+  .page-head{ max-width:1280px; margin:0 auto 32px; }
+  .eyebrow{
+    font-family:var(--font-mono); font-weight:600; font-size:12px; letter-spacing:0.08em;
+    text-transform:uppercase; color:var(--orange); display:flex; align-items:center; gap:8px; margin:0 0 14px;
+  }
+  .eyebrow::before{ content:""; width:6px; height:6px; background:var(--orange); border-radius:50%; }
+  h1{ font-family:var(--font-sans); font-weight:300; font-size:32px; line-height:1.15; letter-spacing:-0.01em; margin:0 0 10px; max-width:760px; }
+  .page-head p{ font-size:15px; line-height:1.55; color:var(--grey-700); max-width:640px; margin:0; }
+
+  /* ── controls dock ─────────────────────────────────────────── */
+  .dock{
+    max-width:1280px; margin:0 auto 20px; display:flex; flex-wrap:wrap; gap:10px; align-items:center;
+    background:var(--white); border:1px solid var(--border); border-radius:2px; padding:14px 16px;
+  }
+  .dock .group{ display:flex; align-items:center; gap:8px; padding-right:14px; border-right:1px solid var(--border); }
+  .dock .group:last-child{ border-right:none; padding-right:0; }
+  .dock label{ font-family:var(--font-mono); font-size:10px; letter-spacing:0.06em; text-transform:uppercase; color:var(--grey-500); }
+  .btn{
+    font-family:var(--font-mono); font-weight:600; font-size:11px; letter-spacing:0.05em; text-transform:uppercase;
+    background:var(--ink); color:var(--white); border:1px solid var(--ink); border-radius:2px; padding:9px 14px;
+    cursor:pointer; transition:background 120ms ease;
+  }
+  .btn:hover{ background:var(--grey-700); }
+  .btn.accent{ background:var(--orange); border-color:var(--orange); }
+  .btn.accent:hover{ background:var(--orange-bright); }
+  .btn.ghost{ background:transparent; color:var(--ink); }
+  .btn.ghost:hover{ background:var(--paper-50); }
+  .btn:disabled{ opacity:0.35; cursor:not-allowed; }
+  .btn:disabled:hover{ background:var(--ink); }
+  .btn.ghost:disabled:hover{ background:transparent; }
+
+  /* ══════════════════════════════════════════════════════════
+     THE VIDEO FRAME — fixed 1280x720, everything below is
+     the actual exportable asset.
+     ══════════════════════════════════════════════════════════ */
+  .frame-wrap{ max-width:1280px; margin:0 auto; }
+  .frame{
+    position:relative; width:1280px; height:720px; max-width:100%; aspect-ratio:16/9;
+    overflow:hidden; border-radius:4px;
+    background:
+      radial-gradient(ellipse 900px 500px at 28% -10%, rgba(255,255,255,0.30), transparent 60%),
+      repeating-linear-gradient(122deg,
+        rgba(255,255,255,0.10) 0px, rgba(255,255,255,0.10) 2px,
+        rgba(255,255,255,0) 2px, rgba(255,255,255,0) 46px),
+      linear-gradient(135deg, #CB350A 0%, #FF6B2C 22%, #D93D0D 42%, #FF8A45 58%, #C93209 76%, #F1611F 100%);
+  }
+
+  /* ── state: start screen ─────────────────────────────────── */
+  .screen{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:36px; padding:40px; opacity:0; pointer-events:none; transition:opacity 320ms ease;
+  }
+  .frame[data-state="start"] .screen.start{ opacity:1; pointer-events:auto; }
+  .test-title{
+    font-family:var(--font-sans); font-weight:800; text-transform:uppercase; color:var(--white);
+    font-size:44px; letter-spacing:0.01em; text-align:center; margin:0;
+    text-shadow:0 2px 24px rgba(0,0,0,0.18);
+  }
+  .search-bar{
+    display:flex; align-items:center; gap:12px; background:var(--white); border-radius:999px;
+    padding:8px 8px 8px 26px; width:560px; max-width:80%; box-shadow:0 12px 34px rgba(0,0,0,0.22);
+  }
+  .search-bar span{ font-family:var(--font-sans); font-weight:500; font-size:16px; color:var(--grey-700); flex:1; }
+  .search-bar button{
+    width:44px; height:44px; border-radius:50%; background:var(--ink); border:none; flex:none;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background 120ms ease;
+  }
+  .search-bar button:hover{ background:var(--grey-700); }
+  .search-bar button svg{ width:18px; height:18px; }
+
+  /* ── state: race screen (running / done / fast-forward) ──── */
+  .frame[data-state="running"] .screen.race,
+  .frame[data-state="ff"] .screen.race{ opacity:1; pointer-events:auto; }
+  .screen.race{ align-items:stretch; justify-content:flex-start; padding:28px 32px 32px; gap:0; }
+
+  .race-header{ display:flex; align-items:center; justify-content:space-between; height:28px; margin-bottom:18px; }
+  .global-timer{
+    font-family:var(--font-mono); font-weight:600; font-size:20px; letter-spacing:0.02em; color:var(--white);
+    font-variant-numeric:tabular-nums; text-shadow:0 1px 10px rgba(0,0,0,0.35);
+  }
+
+  .ff-chip{
+    display:inline-flex; align-items:center; gap:8px; background:var(--ink); color:var(--white); border-radius:999px;
+    padding:7px 16px 7px 14px; opacity:0; transform:translateY(-4px); transition:opacity 200ms ease, transform 200ms ease;
+  }
+  .frame[data-state="ff"] .ff-chip{ opacity:1; transform:translateY(0); }
+  .ff-chip .ff-label{ font-family:var(--font-mono); font-weight:600; font-size:13px; letter-spacing:0.06em; }
+  .ff-chip .ff-arrows{ display:flex; gap:1px; animation:ff-blink 900ms ease-in-out infinite; }
+  .ff-chip svg{ width:12px; height:12px; }
+  @keyframes ff-blink{ 0%,100%{ opacity:1; } 50%{ opacity:0.25; } }
+
+  .panels{ display:flex; gap:24px; flex:1; }
+  .panel-col{ flex:1; display:flex; flex-direction:column; min-width:0; }
+  .panel-label{ font-family:var(--font-sans); font-weight:600; font-size:16px; color:var(--white); margin:0 0 12px 4px; text-shadow:0 1px 8px rgba(0,0,0,0.25); }
+
+  .panel-card{
+    position:relative; flex:1; background:var(--paper-50); border-radius:10px; overflow:hidden;
+    display:flex; flex-direction:column; box-shadow:0 18px 40px rgba(0,0,0,0.18);
+  }
+  .panel-body{ flex:1; padding:20px 20px 12px; overflow:hidden; transition:opacity 320ms ease, filter 320ms ease; }
+  .msg{ display:flex; gap:10px; margin-bottom:16px; }
+  .msg .dot{ width:16px; height:16px; border-radius:50%; flex:none; margin-top:2px; }
+  .msg.user .dot{ background:#2E7D32; }
+  .msg.assistant .dot{ background:#57C29A; }
+  .msg .who{ font-family:var(--font-sans); font-weight:600; font-size:12px; color:var(--grey-700); margin-bottom:3px; }
+  .msg .body-text{ font-family:var(--font-sans); font-size:12.5px; line-height:1.55; color:var(--ink); }
+  .msg .body-text ul{ margin:6px 0 0; padding-left:16px; }
+  .msg .body-text .cursor{ display:inline-block; width:2px; height:12px; background:var(--ink); margin-left:2px; animation:caret-blink 900ms step-end infinite; vertical-align:middle; }
+  @keyframes caret-blink{ 50%{ opacity:0; } }
+
+  .panel-input{
+    margin:0 12px 12px; padding:9px 14px; border:1px solid var(--border); border-radius:999px;
+    display:flex; align-items:center; justify-content:space-between; background:var(--white);
+  }
+  .panel-input span{ font-family:var(--font-sans); font-size:11.5px; color:var(--grey-500); }
+  .panel-input .icons{ display:flex; gap:8px; color:var(--grey-300); }
+
+  /* done overlay per panel */
+  .panel-card.is-done .panel-body{ opacity:0.32; filter:blur(0.3px); }
+  .done-badge{
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-46%) scale(0.85);
+    background:var(--ink); color:var(--white); border-radius:12px; padding:14px 22px;
+    display:flex; align-items:center; gap:12px; opacity:0; transition:opacity 260ms ease, transform 320ms cubic-bezier(.34,1.56,.64,1);
+    box-shadow:0 14px 30px rgba(0,0,0,0.28);
+  }
+  .panel-card.is-done .done-badge{ opacity:1; transform:translate(-50%,-50%) scale(1); }
+  .done-badge .check{ width:30px; height:30px; border-radius:50%; background:var(--orange); flex:none; display:flex; align-items:center; justify-content:center; }
+  .done-badge .check svg{ width:16px; height:16px; }
+  .done-badge .check path{ fill:none; stroke:var(--white); stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+  .done-badge .text .line1{ font-family:var(--font-sans); font-weight:700; font-size:16px; line-height:1.2; }
+  .done-badge .text .line2{ font-family:var(--font-mono); font-weight:600; font-size:12px; opacity:0.7; letter-spacing:0.02em; margin-top:2px; }
+
+  /* ── page notes ───────────────────────────────────────────── */
+  .notes{ max-width:1280px; margin:28px auto 0; padding-top:24px; border-top:1px solid var(--border); }
+  .notes h3{ font-family:var(--font-mono); font-size:12px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--grey-500); margin:20px 0 8px; }
+  .notes ul{ margin:0; padding-left:18px; }
+  .notes li{ font-size:14px; line-height:1.6; color:var(--grey-700); margin:0 0 6px; }
+</style>
+</head>
+<body>
+
+  <div class="page-head">
+    <p class="eyebrow">// Speed-demo video system — race format prototype</p>
+    <h1>The two-panel race, rebuilt to match your reference frames.</h1>
+    <p>Shared header clock instead of per-panel timers, a "Done" badge that overlays the finished panel while the other keeps racing, and an explicit "FF" chip with blinking chevrons instead of relying on speed-lines alone.</p>
+  </div>
+
+  <div class="dock">
+    <div class="group">
+      <label>Playback</label>
+      <button class="btn accent" id="btnStart">Start test</button>
+      <button class="btn ghost" id="btnReset">Reset</button>
+    </div>
+    <div class="group">
+      <label>Trigger</label>
+      <button class="btn ghost" id="btnDoneCerebras">Cerebras finishes</button>
+      <button class="btn ghost" id="btnDoneAWS">AWS Bedrock finishes</button>
+    </div>
+    <div class="group">
+      <label>Fast-forward</label>
+      <button class="btn ghost" id="btnFF">Enable fast-forward</button>
+    </div>
+  </div>
+
+  <div class="frame-wrap">
+    <div class="frame" id="frame" data-state="start">
+
+      <div class="screen start">
+        <h1 class="test-title">Llama 70B Speed Test</h1>
+        <div class="search-bar">
+          <span>teach me to code in python</span>
+          <button id="btnSend"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </div>
+      </div>
+
+      <div class="screen race">
+        <div class="race-header">
+          <div class="ff-chip">
+            <span class="ff-label">FF</span>
+            <span class="ff-arrows"><svg viewBox="0 0 24 24" fill="none"><path d="M4 6l6 6-6 6M13 6l6 6-6 6" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </div>
+          <div class="global-timer" id="globalTimer">00:00:00</div>
+        </div>
+
+        <div class="panels">
+          <div class="panel-col">
+            <div class="panel-label">Cerebras</div>
+            <div class="panel-card" id="panelCerebras">
+              <div class="panel-body">
+                <div class="msg user">
+                  <div class="dot"></div>
+                  <div>
+                    <div class="who">You</div>
+                    <div class="body-text">Can you summarize these meeting notes from our project kickoff, pull out key insights, and come up with action items?</div>
+                  </div>
+                </div>
+                <div class="msg assistant">
+                  <div class="dot"></div>
+                  <div>
+                    <div class="who">ChatGPT</div>
+                    <div class="body-text">Certainly! Here's a concise summary of the Project Titan kick-off meeting, highlighting key insights and detailing the specific action items assigned to move forward effectively.
+                      <br><br><strong>Meeting Summary:</strong>
+                      <ul><li>The kick-off meeting for Project Titan focused on launching a<span class="cursor"></span></li></ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="panel-input"><span>Message ChatGPT...</span><div class="icons">＋ ➤</div></div>
+              <div class="done-badge">
+                <div class="check"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+                <div class="text"><div class="line1">Done</div><div class="line2" id="cerebrasDoneTime">00:00:00</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-col">
+            <div class="panel-label">AWS Bedrock</div>
+            <div class="panel-card" id="panelAWS">
+              <div class="panel-body">
+                <div class="msg user">
+                  <div class="dot"></div>
+                  <div>
+                    <div class="who">You</div>
+                    <div class="body-text">Can you summarize these meeting notes from our project kickoff, pull out key insights, and come up with action items?</div>
+                  </div>
+                </div>
+                <div class="msg assistant">
+                  <div class="dot"></div>
+                  <div>
+                    <div class="who">ChatGPT</div>
+                    <div class="body-text">Certainly! Here's a concise summary of the Project Titan kick-off<span class="cursor"></span></div>
+                  </div>
+                </div>
+              </div>
+              <div class="panel-input"><span>Message ChatGPT...</span><div class="icons">＋ ➤</div></div>
+              <div class="done-badge">
+                <div class="check"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+                <div class="text"><div class="line1">Done</div><div class="line2" id="awsDoneTime">00:00:00</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="notes">
+    <h3>What changed from the reference</h3>
+    <ul>
+      <li>One shared header clock (HH:MM:SS) instead of duplicating a timer per panel — matches your frames exactly and is simpler to composite in editing.</li>
+      <li>"Done" badge freezes the exact header time at the moment that model finished, then sits on top of the dimmed panel while the other side keeps generating — no need to tear down or re-animate the finished panel.</li>
+      <li>"FF" chip is a plain text label plus blinking chevrons — reads correctly even muted or on a single frame, which was the original complaint about the old "×5" treatment.</li>
+      <li>Panel cards use a slightly rounded corner (10px) to match your reference rather than the strict 2px web-control radius, since this is a campaign/video asset, not on-site UI — flag if you'd rather keep it sharp.</li>
+    </ul>
+    <h3>Try it</h3>
+    <ul>
+      <li>"Start test" plays the title-card → race transition. "Cerebras finishes" / "AWS Bedrock finishes" drop the Done badge on that panel at the current clock time. "Enable fast-forward" shows the FF chip and speeds up the clock 8×.</li>
+    </ul>
+  </div>
+
+<script>
+(function(){
+  const frame = document.getElementById('frame');
+  const globalTimerEl = document.getElementById('globalTimer');
+  const panelCerebras = document.getElementById('panelCerebras');
+  const panelAWS = document.getElementById('panelAWS');
+  const cerebrasDoneTime = document.getElementById('cerebrasDoneTime');
+  const awsDoneTime = document.getElementById('awsDoneTime');
+
+  let elapsed = 0, ffOn = false, running = false;
+
+  function fmt(totalSeconds){
+    const h = Math.floor(totalSeconds/3600);
+    const m = Math.floor((totalSeconds%3600)/60);
+    const s = Math.floor(totalSeconds%60);
+    return [h,m,s].map(n=>String(n).padStart(2,'0')).join(':');
+  }
+
+  setInterval(()=>{
+    if(!running) return;
+    elapsed += ffOn ? 8 : 1;
+    globalTimerEl.textContent = fmt(elapsed);
+  }, 1000);
+
+  document.getElementById('btnSend').addEventListener('click', startRace);
+  document.getElementById('btnStart').addEventListener('click', startRace);
+  function startRace(){
+    frame.dataset.state = 'running';
+    running = true;
+  }
+
+  document.getElementById('btnReset').addEventListener('click', ()=>{
+    frame.dataset.state = 'start';
+    running = false; ffOn = false; elapsed = 0;
+    globalTimerEl.textContent = '00:00:00';
+    panelCerebras.classList.remove('is-done');
+    panelAWS.classList.remove('is-done');
+    document.getElementById('btnFF').textContent = 'Enable fast-forward';
+  });
+
+  document.getElementById('btnDoneCerebras').addEventListener('click', ()=>{
+    cerebrasDoneTime.textContent = fmt(elapsed);
+    panelCerebras.classList.add('is-done');
+  });
+  document.getElementById('btnDoneAWS').addEventListener('click', ()=>{
+    awsDoneTime.textContent = fmt(elapsed);
+    panelAWS.classList.add('is-done');
+  });
+
+  document.getElementById('btnFF').addEventListener('click', function(){
+    ffOn = !ffOn;
+    frame.dataset.state = ffOn ? 'ff' : 'running';
+    this.textContent = ffOn ? 'Disable fast-forward' : 'Enable fast-forward';
+  });
+})();
+</script>
+</body>
+</html>

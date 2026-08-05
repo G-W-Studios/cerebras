@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cerebras — The world's fastest AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Sometype+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange: #F15A29;
+      --orange-hover: #F74E11;
+      --mandarin: #FF985D;
+      --ink: #1A1A1A;
+      --cream: #F7F5F2;
+      --cream-alt: #ECE8E4;
+      --gray-200: #CCCAC8;
+      --bg-dark: #240a06;
+      --radius-sm: 2px;
+      --radius-lg: 40px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg-dark);
+      color: #fff;
+      font-family: 'Manrope', sans-serif;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── NAVIGATION ─────────────────────────────────────────────── */
+    .nav-wrap {
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      height: 108px;
+      background: #fff;
+    }
+
+    .nav {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 32px 48px;
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border-radius: 100px;
+    }
+
+    .nav-logo {
+      width: 105px;
+      height: 44px;
+      object-fit: contain;
+      object-position: left center;
+      display: block;
+      flex-shrink: 0;
+    }
+
+    .nav-menu {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-menu a {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--ink);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+      transition: color 150ms ease;
+    }
+    .nav-menu a:hover { color: var(--orange); }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      height: 40px;
+      padding: 0 18px;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      font-family: 'Sometype Mono', monospace;
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: background 150ms ease, transform 80ms ease;
+    }
+    .btn:active { transform: scale(0.98); }
+
+    .btn-ghost {
+      background: var(--cream-alt);
+      color: var(--ink);
+    }
+    .btn-ghost:hover { background: #dbd7d1; }
+
+    .btn-dark {
+      background: var(--ink);
+      color: #fff;
+    }
+    .btn-dark:hover { background: #2d2d2d; }
+
+    .btn-primary {
+      background: var(--orange);
+      color: var(--ink);
+    }
+    .btn-primary:hover { background: var(--orange-hover); }
+
+    .btn-gradient {
+      background: linear-gradient(154deg, #FFE365 17%, #FB490F 89%);
+      color: var(--ink);
+    }
+    .btn-gradient:hover { opacity: 0.92; }
+
+    .btn-icon {
+      width: 40px;
+      padding: 0;
+    }
+    .btn-icon svg { width: 16px; height: 16px; }
+
+    /* ─── HERO SECTION ───────────────────────────────────────────── */
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 80px 78px 96px;
+      min-height: 680px;
+      display: flex;
+      align-items: center;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 65% 40%, rgba(200, 80, 0, 0.45) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 80% at 20% -10%, rgba(160, 50, 0, 0.3) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .hero-texture {
+      position: absolute;
+      inset: 0;
+      background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.025) 39px, rgba(255,255,255,0.025) 40px),
+        repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.025) 39px, rgba(255,255,255,0.025) 40px);
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 64px;
+      width: 100%;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    /* ─── LEFT COPY RAIL (fixed width, never shifts) ──────────────── */
+    .hero-copy-rail {
+      flex-shrink: 0;
+      width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 48px;
+    }
+
+    .hero-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    /* headline + CTA crossfade in-place only */
+    .slide-copy {
+      display: none;
+      flex-direction: column;
+      gap: 32px;
+      opacity: 0;
+      transition: opacity 300ms ease;
+    }
+    .slide-copy.active {
+      display: flex;
+      opacity: 1;
+    }
+    .slide-copy.fading-out {
+      display: flex;
+      opacity: 0;
+    }
+
+    .hero-headline {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 300;
+      font-size: clamp(40px, 4.2vw, 64px);
+      line-height: 0.92;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+
+    .hero-headline .gradient-text {
+      background: linear-gradient(90deg, #FFCE5C 24.5%, #F76D32 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-cta { display: flex; }
+
+    /* ─── SLIDE TABS ─────────────────────────────────────────────── */
+    .slide-tabs {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .slide-tab {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0 10px 14px;
+      border-left: 2px solid transparent;
+      cursor: pointer;
+      opacity: 0.4;
+      transition: opacity 200ms ease, border-color 200ms ease;
+      background: none;
+      border-top: none;
+      border-right: none;
+      border-bottom: none;
+      text-align: left;
+    }
+
+    .slide-tab:hover { opacity: 0.7; }
+
+    .slide-tab.active {
+      opacity: 1;
+      border-left-color: var(--orange);
+    }
+
+    .slide-tab-label {
+      font-family: 'Sometype Mono', monospace;
+      font-weight: 600;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #fff;
+      white-space: nowrap;
+    }
+
+    /* progress bar inside active tab */
+    .slide-tab-progress {
+      flex: 1;
+      height: 1px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 1px;
+      overflow: hidden;
+      opacity: 0;
+      transition: opacity 200ms ease;
+    }
+    .slide-tab.active .slide-tab-progress {
+      opacity: 1;
+    }
+    .slide-tab-bar {
+      height: 100%;
+      width: 0%;
+      background: var(--orange);
+      border-radius: 1px;
+      transition: width linear;
+    }
+
+    /* ─── RIGHT PANEL CONTAINER ──────────────────────────────────── */
+    .hero-right {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 420px;
+    }
+
+    /* Each slide panel clips in from the right */
+    .slide-panel {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      clip-path: inset(0 100% 0 0);
+      transition: clip-path 500ms cubic-bezier(.22,1,.36,1);
+      pointer-events: none;
+    }
+
+    .slide-panel.active {
+      clip-path: inset(0 0% 0 0);
+      pointer-events: auto;
+    }
+
+    /* ─── CHIP COMPARISON (Slide 1) ──────────────────────────────── */
+    .hero-visual {
+      flex-shrink: 0;
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      gap: 80px;
+    }
+
+    .chip-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .chip-wafer {
+      position: relative;
+      width: 340px;
+      height: 340px;
+      flex-shrink: 0;
+      box-shadow: 0 -10px 140px -6px rgba(187,100,0,0.6);
+    }
+    .chip-wafer img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .chip-wafer-overlay1 {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(224deg, rgba(241,89,42,0) 12%, rgba(241,89,42,0.14) 46%, rgba(241,89,42,0) 87%);
+      mix-blend-mode: color-burn;
+    }
+    .chip-wafer-overlay2 {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(222deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.16) 84%);
+    }
+
+    .chip-b200 {
+      display: flex;
+      gap: 3.81px;
+      align-items: center;
+    }
+    .chip-b200-tile {
+      width: 38.1px;
+      height: 50.2px;
+      position: relative;
+      overflow: hidden;
+    }
+    .chip-b200-tile img {
+      position: absolute;
+      height: 119.51%;
+      top: -7.12%;
+      width: 228.89%;
+    }
+    .chip-b200-tile:first-child img { left: -9.25%; }
+    .chip-b200-tile:last-child  img { left: -113.19%; }
+
+    .chip-ruler svg { display: block; }
+
+    .chip-label {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 600;
+      font-size: 16px;
+      line-height: 1.3;
+      letter-spacing: -0.01em;
+      color: #fff;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    /* ─── PARTNERSHIP LOCKUP (Slide 2) ──────────────────────────── */
+    .partnership-lockup {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .partnership-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 28px;
+      border-radius: 100px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.05);
+      box-shadow:
+        0 0 60px rgba(241, 90, 41, 0.15),
+        inset 0 1px 0 rgba(255,255,255,0.08);
+      backdrop-filter: blur(12px);
+    }
+
+    .partnership-pill-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--orange);
+      flex-shrink: 0;
+      box-shadow: 0 0 8px rgba(241,90,41,0.7);
+    }
+
+    .partnership-pill-text {
+      font-family: 'Sometype Mono', monospace;
+      font-weight: 600;
+      font-size: 18px;
+      letter-spacing: 0.04em;
+      text-transform: lowercase;
+      color: #fff;
+      white-space: nowrap;
+    }
+
+    .partnership-pill-text-serif {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 500;
+      font-size: 20px;
+      letter-spacing: -0.01em;
+      color: #fff;
+      white-space: nowrap;
+    }
+
+    .partnership-times {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 300;
+      font-size: 28px;
+      color: rgba(255,255,255,0.5);
+      flex-shrink: 0;
+    }
+
+    /* warm glow behind lockup */
+    .partnership-glow {
+      position: absolute;
+      width: 600px;
+      height: 300px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(241,90,41,0.2) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* ─── SPEED METRIC CARD (Slide 3) ────────────────────────────── */
+    .speed-card {
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: var(--radius-sm);
+      padding: 56px 64px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* subtle inner glow */
+    .speed-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 30%, rgba(241,90,41,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .speed-number {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 300;
+      font-size: 96px;
+      line-height: 0.9;
+      letter-spacing: -0.04em;
+      background: linear-gradient(135deg, #FFFFFF 0%, #FFCE5C 50%, #F76D32 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      white-space: nowrap;
+    }
+
+    .speed-unit {
+      font-family: 'Sometype Mono', monospace;
+      font-weight: 600;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.45);
+    }
+
+    .speed-divider {
+      width: 100%;
+      height: 1px;
+      background: rgba(255,255,255,0.1);
+    }
+
+    .speed-comparisons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .speed-comparison-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Manrope', sans-serif;
+      font-weight: 500;
+      font-size: 14px;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: -0.01em;
+    }
+
+    .speed-comparison-row .vs-val {
+      font-family: 'Sometype Mono', monospace;
+      font-weight: 600;
+      font-size: 13px;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .speed-comparison-row .vs-dot {
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      flex-shrink: 0;
+    }
+
+    /* ─── BLOG SECTION ───────────────────────────────────────────── */
+    .blog-section {
+      padding: 40px 78px 80px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .blog-grid {
+      display: grid;
+      grid-template-columns: 1fr 1px 1fr 1px 1fr;
+      gap: 0;
+      align-items: stretch;
+    }
+
+    .blog-divider {
+      background: rgba(255, 255, 255, 0.12);
+      align-self: stretch;
+      transform: scaleY(0.25);
+      transform-origin: center;
+      transition: transform 400ms cubic-bezier(.22,1,.36,1), background 400ms cubic-bezier(.22,1,.36,1);
+    }
+
+    .blog-card:hover + .blog-divider,
+    .blog-divider:has(+ .blog-card:hover) {
+      transform: scaleY(1);
+      background: rgba(255, 255, 255, 0.28);
+    }
+
+    .blog-card {
+      padding: 0 36px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 220px;
+      gap: 20px;
+      cursor: pointer;
+    }
+    .blog-card:first-child { padding-left: 0; }
+    .blog-card:last-child  { padding-right: 0; }
+
+    .blog-card-top {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 8px;
+      border-radius: var(--radius-sm);
+      background: var(--mandarin);
+      font-family: 'Sometype Mono', monospace;
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--ink);
+      align-self: flex-start;
+      white-space: nowrap;
+    }
+
+    .blog-title {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 500;
+      font-size: 22px;
+      line-height: 1.3;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+
+    .blog-desc {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 500;
+      font-size: 15px;
+      line-height: 1.5;
+      color: var(--gray-200);
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 220ms cubic-bezier(.22,1,.36,1), transform 220ms cubic-bezier(.22,1,.36,1);
+    }
+
+    .blog-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 220ms cubic-bezier(.22,1,.36,1) 40ms, transform 220ms cubic-bezier(.22,1,.36,1) 40ms;
+      text-decoration: none;
+      margin-top: auto;
+    }
+
+    .blog-card:hover .blog-desc,
+    .blog-card:hover .blog-link {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .blog-arrow {
+      width: 28px;
+      height: 28px;
+      background: var(--orange);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 150ms ease;
+    }
+    .blog-card:hover .blog-arrow { background: var(--orange-hover); }
+
+    .blog-arrow svg { width: 14px; height: 14px; }
+
+    .blog-link-text {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 600;
+      font-size: 15px;
+      color: #fff;
+      letter-spacing: -0.01em;
+    }
+
+    /* ─── LOGO STRIP ─────────────────────────────────────────────── */
+    .logos-section {
+      padding: 60px 0 56px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .logos-section::before,
+    .logos-section::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 120px;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .logos-section::before {
+      left: 0;
+      background: linear-gradient(to right, var(--bg-dark), transparent);
+    }
+    .logos-section::after {
+      right: 0;
+      background: linear-gradient(to left, var(--bg-dark), transparent);
+    }
+
+    .logos-track {
+      display: flex;
+      align-items: center;
+      gap: 56px;
+      width: max-content;
+      animation: marquee 32s linear infinite;
+    }
+    .logos-track:hover { animation-play-state: paused; }
+
+    @keyframes marquee {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    .logo-item {
+      flex-shrink: 0;
+      height: 52px;
+      display: flex;
+      align-items: center;
+    }
+
+    .logo-item img {
+      height: 100%;
+      width: auto;
+      max-width: 110px;
+      object-fit: contain;
+      filter: brightness(0) invert(1);
+      opacity: 0.55;
+      transition: opacity 200ms ease;
+      display: block;
+    }
+    .logo-item img:hover { opacity: 0.9; }
+  </style>
+</head>
+<body>
+
+  <!-- ─── NAVIGATION ─────────────────────────────────────────────── -->
+  <div class="nav-wrap">
+    <nav class="nav">
+      <div style="width:206px;flex-shrink:0;">
+        <img
+          class="nav-logo"
+          src="https://www.figma.com/api/mcp/asset/e60e6b9c-7ea8-4c80-a4c1-23fd77250838"
+          alt="Cerebras"
+        >
+      </div>
+      <ul class="nav-menu">
+        <li><a href="#">Products</a></li>
+        <li><a href="#">Customers</a></li>
+        <li><a href="#">Developers</a></li>
+        <li><a href="#">Resources</a></li>
+        <li><a href="#">Pricing</a></li>
+        <li><a href="#">Company</a></li>
+      </ul>
+      <div class="nav-actions">
+        <button class="btn btn-ghost btn-icon" aria-label="Search" style="width:44px;height:44px;padding:0;">
+          <img src="https://www.figma.com/api/mcp/asset/a4a24bbb-044c-469e-a612-b979f09262b4" alt="" style="width:16px;height:16px;display:block;">
+        </button>
+        <a href="#" class="btn btn-dark" style="height:44px;">Contact us</a>
+        <a href="#" class="btn" style="height:44px;background:linear-gradient(154.46deg,#FFE365 17.3%,#FB490F 89.3%);color:var(--ink);">Get started</a>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ─── HERO ───────────────────────────────────────────────────── -->
+  <section class="hero" id="hero">
+    <div class="hero-texture"></div>
+
+    <div class="hero-inner">
+
+      <!-- LEFT: fixed copy rail -->
+      <div class="hero-copy-rail">
+
+        <div class="hero-copy">
+
+          <!-- Slide 1 copy -->
+          <div class="slide-copy active" data-slide="0">
+            <h1 class="hero-headline">
+              The world's <span class="gradient-text">fastest AI</span><br>
+              Runs on the <span class="gradient-text">world's biggest chip</span>
+            </h1>
+            <div class="hero-cta">
+              <a href="#" class="btn btn-primary" style="font-size:13px;height:44px;padding:0 22px;">Learn more</a>
+            </div>
+          </div>
+
+          <!-- Slide 2 copy -->
+          <div class="slide-copy" data-slide="1">
+            <h1 class="hero-headline">
+              The fastest<br>
+              inference is now<br>
+              <span class="gradient-text">multimodal</span>
+            </h1>
+            <div class="hero-cta">
+              <a href="#" class="btn btn-primary" style="font-size:13px;height:44px;padding:0 22px;">Read more</a>
+            </div>
+          </div>
+
+          <!-- Slide 3 copy -->
+          <div class="slide-copy" data-slide="2">
+            <h1 class="hero-headline">
+              <span class="gradient-text">1,500+</span> tokens<br>
+              per second on<br>
+              Llama 4
+            </h1>
+            <div class="hero-cta">
+              <a href="#" class="btn btn-primary" style="font-size:13px;height:44px;padding:0 22px;">Run the benchmark</a>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Slide tabs -->
+        <div class="slide-tabs" role="tablist" aria-label="Carousel navigation">
+          <button class="slide-tab active" data-slide="0" role="tab" aria-selected="true">
+            <span class="slide-tab-label">01 / WSE-3</span>
+            <span class="slide-tab-progress"><span class="slide-tab-bar"></span></span>
+          </button>
+          <button class="slide-tab" data-slide="1" role="tab" aria-selected="false">
+            <span class="slide-tab-label">02 / Multimodal</span>
+            <span class="slide-tab-progress"><span class="slide-tab-bar"></span></span>
+          </button>
+          <button class="slide-tab" data-slide="2" role="tab" aria-selected="false">
+            <span class="slide-tab-label">03 / Speed</span>
+            <span class="slide-tab-progress"><span class="slide-tab-bar"></span></span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- RIGHT: sliding panels -->
+      <div class="hero-right" id="hero-right">
+
+        <!-- Panel 1: Chip comparison -->
+        <div class="slide-panel active" data-panel="0">
+          <div class="hero-visual">
+
+            <!-- Cerebras WSE-3 -->
+            <div class="chip-item">
+              <div class="chip-wafer">
+                <img src="https://www.figma.com/api/mcp/asset/50a31ade-6ec2-45f7-bdd3-494bef8f6a7b" alt="Cerebras WSE-3 wafer">
+                <div class="chip-wafer-overlay1"></div>
+                <div class="chip-wafer-overlay2"></div>
+              </div>
+              <div class="chip-ruler">
+                <svg id="ruler-wse3" height="18" style="display:block;"></svg>
+              </div>
+              <div class="chip-label">CEREBRAS<br>Wafer Scale Engine 3</div>
+            </div>
+
+            <!-- NVIDIA B200 -->
+            <div class="chip-item">
+              <div class="chip-b200">
+                <div class="chip-b200-tile">
+                  <img src="https://www.figma.com/api/mcp/asset/522efbf2-1e02-4f37-adfd-d0ab929d16c9" alt="">
+                </div>
+                <div class="chip-b200-tile">
+                  <img src="https://www.figma.com/api/mcp/asset/522efbf2-1e02-4f37-adfd-d0ab929d16c9" alt="">
+                </div>
+              </div>
+              <div class="chip-ruler">
+                <svg id="ruler-b200" height="18" style="display:block;"></svg>
+              </div>
+              <div class="chip-label">NVIDIA GPU<br>B200</div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Panel 2: Partnership lockup -->
+        <div class="slide-panel" data-panel="1">
+          <div style="position:relative;display:flex;align-items:center;justify-content:center;">
+            <div class="partnership-glow"></div>
+            <div class="partnership-lockup">
+              <!-- Cerebras pill -->
+              <div class="partnership-pill">
+                <div class="partnership-pill-dot"></div>
+                <span class="partnership-pill-text">cerebras</span>
+              </div>
+              <!-- Times symbol -->
+              <span class="partnership-times">×</span>
+              <!-- Gemma pill -->
+              <div class="partnership-pill">
+                <span class="partnership-pill-text-serif">Gemma 4</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 3: Speed metric card -->
+        <div class="slide-panel" data-panel="2">
+          <div class="speed-card">
+            <div class="speed-number">1,500+</div>
+            <div class="speed-unit">Tokens per second</div>
+            <div class="speed-divider"></div>
+            <div class="speed-comparisons">
+              <div class="speed-comparison-row">
+                <span class="vs-val">vs 150 tok/s</span>
+                <span class="vs-dot"></span>
+                <span>H100 cluster</span>
+              </div>
+              <div class="speed-comparison-row">
+                <span class="vs-val">vs 80 tok/s</span>
+                <span class="vs-dot"></span>
+                <span>A100 cluster</span>
+              </div>
+              <div class="speed-comparison-row">
+                <span class="vs-val">Llama 4 Scout</span>
+                <span class="vs-dot"></span>
+                <span>full precision</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── BLOG CARDS ─────────────────────────────────────────────── -->
+  <div class="blog-section">
+    <div class="blog-grid">
+
+      <div class="blog-card">
+        <div class="blog-card-top">
+          <span class="tag">Blog</span>
+          <p class="blog-title">The Economics of AI Reasoning</p>
+          <p class="blog-desc">Deploy frontier models at production scale with world-record speeds — no compromises on model size or precision.</p>
+        </div>
+        <a href="#" class="blog-link">
+          <span class="blog-arrow">
+            <svg viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 7h10M8 3l4 4-4 4"/>
+            </svg>
+          </span>
+          <span class="blog-link-text">Read the article</span>
+        </a>
+      </div>
+
+      <div class="blog-divider"></div>
+
+      <div class="blog-card">
+        <div class="blog-card-top">
+          <span class="tag">Press Release</span>
+          <p class="blog-title">Cerebras Systems Sets Date of First-Quarter 2026 Financial Results</p>
+          <p class="blog-desc">Stay up to date with the latest financial news and milestones from Cerebras Systems.</p>
+        </div>
+        <a href="#" class="blog-link">
+          <span class="blog-arrow">
+            <svg viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 7h10M8 3l4 4-4 4"/>
+            </svg>
+          </span>
+          <span class="blog-link-text">Read the press release</span>
+        </a>
+      </div>
+
+      <div class="blog-divider"></div>
+
+      <div class="blog-card">
+        <div class="blog-card-top">
+          <span class="tag">Blog</span>
+          <p class="blog-title">Which is faster: Kimi K2.6 on Cerebras or Gemini Flash?</p>
+          <p class="blog-desc">A head-to-head benchmark — see how Cerebras inference stacks up against the competition.</p>
+        </div>
+        <a href="#" class="blog-link">
+          <span class="blog-arrow">
+            <svg viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 7h10M8 3l4 4-4 4"/>
+            </svg>
+          </span>
+          <span class="blog-link-text">Read the article</span>
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ─── LOGO MARQUEE ───────────────────────────────────────────── -->
+  <div class="logos-section">
+    <div class="logos-track">
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/b40f0e66-49a1-415f-a45e-5d63dd61eae6" alt="W&B"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/55f989a7-af07-4fa1-8267-4b689cfc9c53" alt="Partner"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/733d0eba-8e4f-48de-a469-003bfdb012f7" alt="Aleph Alpha"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/25acab90-f92a-4307-b0ca-9cb29d747af1" alt="Nasdaq"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/b933a170-d7e6-4379-bb4f-1ea90ae3f26b" alt="LangChain"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/eec8cfbe-eb8e-4113-81ef-d03fce42030b" alt="Partner"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/d408a286-8416-4078-b497-57deaac8a455" alt="Docker"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/859cc87d-42df-48c9-9940-21c0eba1fa5e" alt="GSK"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/578f0ca9-e82c-4611-8fdc-081712ca3262" alt="Meter"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/6a0e6dac-97dc-4545-879a-623ec118bad0" alt="LlamaIndex"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/c8034897-1fe5-464d-a592-b3829d553175" alt="LiveKit"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/a0d863ac-1bff-4b0a-a6d1-9606bda89dc5" alt="Partner"></div>
+      <!-- duplicate set B -->
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/b40f0e66-49a1-415f-a45e-5d63dd61eae6" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/55f989a7-af07-4fa1-8267-4b689cfc9c53" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/733d0eba-8e4f-48de-a469-003bfdb012f7" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/25acab90-f92a-4307-b0ca-9cb29d747af1" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/b933a170-d7e6-4379-bb4f-1ea90ae3f26b" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/eec8cfbe-eb8e-4113-81ef-d03fce42030b" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/d408a286-8416-4078-b497-57deaac8a455" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/859cc87d-42df-48c9-9940-21c0eba1fa5e" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/578f0ca9-e82c-4611-8fdc-081712ca3262" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/6a0e6dac-97dc-4545-879a-623ec118bad0" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/c8034897-1fe5-464d-a592-b3829d553175" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/a0d863ac-1bff-4b0a-a6d1-9606bda89dc5" alt="" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <script>
+    // ─── Ruler drawing (verbatim from source) ─────────────────────
+    function drawRuler(svgId, totalWidth) {
+      const svg = document.getElementById(svgId);
+      if (!svg) return;
+      svg.setAttribute('width', totalWidth);
+      svg.setAttribute('viewBox', '0 0 ' + totalWidth + ' 18');
+
+      const pitch = 4.6;
+      const count = Math.round(totalWidth / pitch);
+      const actualPitch = totalWidth / count;
+      const stroke = 'rgba(255,255,255,0.55)';
+
+      let d = '';
+      for (let i = 0; i <= count; i++) {
+        const x = i * actualPitch;
+        const isEdge = (i === 0 || i === count);
+        const h = isEdge ? 18 : 12;
+        const y1 = isEdge ? 0 : 3;
+        d += `M${x.toFixed(2)},${y1} L${x.toFixed(2)},${(y1+h).toFixed(2)} `;
+      }
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', d);
+      path.setAttribute('stroke', stroke);
+      path.setAttribute('stroke-width', '1');
+      path.setAttribute('fill', 'none');
+      svg.appendChild(path);
+    }
+
+    drawRuler('ruler-wse3', 340);
+    drawRuler('ruler-b200', 80);
+
+    // ─── Carousel logic ───────────────────────────────────────────
+    const SLIDE_DURATION = 6000; // ms
+    const COPY_FADE = 300;       // ms
+    const PANEL_WIPE = 500;      // ms
+
+    const copies  = Array.from(document.querySelectorAll('.slide-copy'));
+    const panels  = Array.from(document.querySelectorAll('.slide-panel'));
+    const tabs    = Array.from(document.querySelectorAll('.slide-tab'));
+    const hero    = document.getElementById('hero');
+
+    let current = 0;
+    let timer   = null;
+    let barTimer = null;
+    let barStart = null;
+    let paused  = false;
+
+    function goTo(next) {
+      if (next === current) return;
+
+      const prev = current;
+      current = next;
+
+      // — fade out old copy —
+      copies[prev].classList.add('fading-out');
+      copies[prev].classList.remove('active');
+
+      // — wipe out old panel (clip back to right) —
+      panels[prev].style.transition = 'clip-path 400ms cubic-bezier(.22,1,.36,1)';
+      panels[prev].style.clipPath   = 'inset(0 100% 0 0)';
+
+      // After clip-out, clean up old panel
+      setTimeout(() => {
+        panels[prev].classList.remove('active');
+        panels[prev].style.clipPath   = '';
+        panels[prev].style.transition = '';
+        copies[prev].classList.remove('fading-out');
+      }, 420);
+
+      // — after copy fades, swap in new —
+      setTimeout(() => {
+        copies[next].style.opacity = '0';
+        copies[next].classList.add('active');
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            copies[next].style.opacity = '';
+          });
+        });
+      }, COPY_FADE);
+
+      // — wipe in new panel —
+      panels[next].style.clipPath   = 'inset(0 100% 0 0)';
+      panels[next].style.transition = 'none';
+      panels[next].classList.add('active');
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          panels[next].style.transition = 'clip-path 500ms cubic-bezier(.22,1,.36,1)';
+          panels[next].style.clipPath   = 'inset(0 0% 0 0)';
+        });
+      });
+
+      // — tabs —
+      tabs.forEach((tab, i) => {
+        tab.classList.toggle('active', i === next);
+        tab.setAttribute('aria-selected', i === next ? 'true' : 'false');
+        // reset bars
+        const bar = tab.querySelector('.slide-tab-bar');
+        bar.style.transition = 'none';
+        bar.style.width = '0%';
+      });
+
+      startProgressBar();
+    }
+
+    function startProgressBar() {
+      clearTimeout(barTimer);
+      if (barStart !== null) clearTimeout(barStart);
+
+      const bar = tabs[current].querySelector('.slide-tab-bar');
+
+      // reset without animation first
+      bar.style.transition = 'none';
+      bar.style.width = '0%';
+
+      barStart = setTimeout(() => {
+        bar.style.transition = `width ${SLIDE_DURATION}ms linear`;
+        bar.style.width = '100%';
+      }, 30);
+    }
+
+    function advance() {
+      goTo((current + 1) % tabs.length);
+    }
+
+    function startAutoplay() {
+      clearInterval(timer);
+      timer = setInterval(() => {
+        if (!paused) advance();
+      }, SLIDE_DURATION);
+    }
+
+    // Tab click
+    tabs.forEach((tab, i) => {
+      tab.addEventListener('click', () => {
+        clearInterval(timer);
+        goTo(i);
+        startAutoplay();
+      });
+    });
+
+    // Pause on hero hover
+    hero.addEventListener('mouseenter', () => { paused = true; });
+    hero.addEventListener('mouseleave', () => { paused = false; });
+
+    // Boot
+    // Activate first panel immediately (no wipe needed)
+    panels[0].style.clipPath = 'inset(0 0% 0 0)';
+
+    startProgressBar();
+    startAutoplay();
+  </script>
+</body>
+</html>

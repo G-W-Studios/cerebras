@@ -1,0 +1,7 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 68 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="traffic-lights">
+<circle id="red" cx="22" cy="22" r="6" fill="var(--fill-0, white)"/>
+<circle id="yellow" cx="42" cy="22" r="6" fill="var(--fill-0, #B3B1AF)"/>
+<circle id="green" cx="62" cy="22" r="6" fill="var(--fill-0, #4D4C4B)"/>
+</g>
+</svg>

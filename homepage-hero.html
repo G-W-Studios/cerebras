@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cerebras — The world's fastest AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Sometype+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange: #F15A29;
+      --orange-hover: #F74E11;
+      --ink: #1A1A1A;
+      --cream: #F7F5F2;
+      --cream-alt: #ECE8E4;
+      --bg-dark: #262626;
+      --radius-sm: 2px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg-dark);
+      color: #fff;
+      font-family: 'Manrope', sans-serif;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── NAVIGATION ─────────────────────────────────────────────── */
+    .nav-wrap {
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      height: 108px;
+      background: #fff;
+    }
+
+    .nav {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 32px 48px;
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border-radius: 100px;
+    }
+
+    .nav-logo {
+      width: 105px;
+      height: 44px;
+      object-fit: contain;
+      object-position: left center;
+      display: block;
+      flex-shrink: 0;
+    }
+
+    .nav-menu {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-menu a {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--ink);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+      transition: color 150ms ease;
+    }
+    .nav-menu a:hover { color: var(--orange); }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      height: 44px;
+      padding: 0 20px;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      font-family: 'Sometype Mono', monospace;
+      font-weight: 600;
+      font-size: 13px;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: background 150ms ease, transform 80ms ease;
+      white-space: nowrap;
+    }
+    .btn:active { transform: scale(0.98); }
+
+    .btn-ghost {
+      background: var(--cream-alt);
+      color: var(--ink);
+    }
+    .btn-ghost:hover { background: #dbd7d1; }
+
+    .btn-dark {
+      background: var(--ink);
+      color: #fff;
+    }
+    .btn-dark:hover { background: #2d2d2d; }
+
+    .btn-gradient {
+      background: linear-gradient(154.46deg, #FFE365 17.3%, #FB490F 89.3%);
+      color: var(--ink);
+    }
+    .btn-gradient:hover { opacity: 0.92; }
+
+    .btn-white {
+      background: #fff;
+      color: var(--ink);
+    }
+    .btn-white:hover { background: #f0eeeb; }
+
+    .btn-icon {
+      width: 44px;
+      padding: 0;
+    }
+
+    /* ─── HERO SECTION ───────────────────────────────────────────── */
+    .hero {
+      position: relative;
+      overflow: hidden;
+      height: 800px;
+      padding: 100px 78px;
+      display: flex;
+      align-items: stretch;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 110% 75% at 38% -5%, #FFB020 0%, #E05800 28%, rgba(90,15,0,0.85) 58%, transparent 78%),
+        radial-gradient(ellipse 60% 45% at 92% 8%, rgba(240,130,0,0.45) 0%, transparent 55%),
+        linear-gradient(170deg, #8C2600 0%, #3A0800 45%, #0E0100 100%);
+      z-index: 0;
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: stretch;
+      gap: 64px;
+      width: 100%;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .hero-text {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      gap: 32px;
+      padding-right: 56px;
+    }
+
+    .hero-headline {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 300;
+      font-size: 64px;
+      line-height: 0.92;
+      letter-spacing: -0.02em;
+      color: #fff;
+      text-transform: uppercase;
+    }
+
+    .hero-headline .gold-text {
+      color: #ffd269;
+    }
+
+    .hero-body {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 500;
+      font-size: 16px;
+      line-height: 1.3;
+      letter-spacing: -0.01em;
+      color: #fff;
+      max-width: 489px;
+    }
+
+    .hero-cta { display: flex; }
+
+    /* ─── CHIP COMPARISON ───────────────────────────────────────── */
+    .chip-container {
+      flex-shrink: 0;
+      width: 656px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .chip-comparison {
+      display: flex;
+      align-items: flex-end;
+      gap: 44px;
+    }
+
+    .chip-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    /* WSE-3 — canvas lives here so chip renders directly above the ruler */
+    .chip-wafer {
+      width: 380px;
+      height: 380px;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    /* Scale up so chip fills the frame. pointer-events: none routes all events
+       through the window listener (avoids direct canvas capture). */
+    #spline-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      transform: scale(2.09);
+      transform-origin: center center;
+      pointer-events: none;
+    }
+
+    /* B200 tiles */
+    .chip-b200 {
+      display: flex;
+      gap: 3.81px;
+      align-items: center;
+    }
+    .chip-b200-tile {
+      width: 38.1px;
+      height: 50.2px;
+      position: relative;
+      overflow: hidden;
+    }
+    .chip-b200-tile img {
+      position: absolute;
+      height: 119.51%;
+      top: -7.12%;
+      width: 228.89%;
+    }
+    .chip-b200-tile:first-child img { left: -9.25%; }
+    .chip-b200-tile:last-child  img { left: -113.19%; }
+
+    /* Rulers */
+    .chip-ruler { overflow: hidden; }
+
+    /* Labels */
+    .chip-label {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 600;
+      font-size: 16px;
+      line-height: 1.3;
+      letter-spacing: -0.01em;
+      color: #fff;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    /* ─── ENTRY ANIMATIONS ───────────────────────────────────────── */
+    @keyframes text-in {
+      from { opacity: 0; transform: translateY(28px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes chip-in {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes ruler-grow {
+      from { transform: scaleX(0); }
+      to   { transform: scaleX(1); }
+    }
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    /* Hero text stagger */
+    .hero-headline { overflow: hidden; }
+    .hl {
+      display: block;
+      opacity: 0;
+      animation: text-in 750ms cubic-bezier(.22,1,.36,1) forwards;
+    }
+    .hl:nth-child(1) { animation-delay: 0ms; }
+    .hl:nth-child(2) { animation-delay: 130ms; }
+
+    .hero-body {
+      opacity: 0;
+      animation: text-in 700ms cubic-bezier(.22,1,.36,1) 280ms forwards;
+    }
+    .hero-cta {
+      opacity: 0;
+      animation: text-in 700ms cubic-bezier(.22,1,.36,1) 420ms forwards;
+    }
+
+    /* Chip comparison sequence — starts shortly after left text appears */
+    .chip-wse3 {
+      opacity: 0;
+      animation: fade-in 1000ms ease 600ms forwards;
+    }
+    .chip-b200-wrap {
+      opacity: 0;
+      animation: fade-in 1000ms ease 1000ms forwards;
+    }
+    .ruler-wse3-svg {
+      transform: scaleX(0);
+      transform-origin: center;
+      animation: ruler-grow 500ms cubic-bezier(.22,1,.36,1) 1400ms forwards;
+    }
+    .ruler-b200-svg {
+      transform: scaleX(0);
+      transform-origin: center;
+      animation: ruler-grow 500ms cubic-bezier(.22,1,.36,1) 1550ms forwards;
+    }
+    .chip-label-wse3 {
+      opacity: 0;
+      animation: fade-in 400ms ease 1900ms forwards;
+    }
+    .chip-label-b200 {
+      opacity: 0;
+      animation: fade-in 400ms ease 2050ms forwards;
+    }
+
+    /* ─── LOGO STRIP ─────────────────────────────────────────────── */
+    .logos-section {
+      display: flex;
+      align-items: stretch;
+      width: 100%;
+      background: var(--bg-dark);
+    }
+
+    .logos-texture {
+      flex: 1;
+      min-width: 0;
+      background: var(--bg-dark);
+    }
+
+    .logos-center {
+      flex-shrink: 0;
+      width: 1440px;
+      position: relative;
+      overflow: hidden;
+      padding: 10px 0;
+      background: var(--bg-dark);
+      /* CSS edge fade — no image needed */
+      -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 7%, #000 93%, transparent 100%);
+      mask-image: linear-gradient(to right, transparent 0%, #000 7%, #000 93%, transparent 100%);
+    }
+
+    .logos-center-bg { display: none; }
+
+    .logos-track {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 48px;
+      width: max-content;
+      padding: 16px 0;
+      animation: marquee 32s linear infinite;
+    }
+    .logos-track:hover { animation-play-state: paused; }
+
+    @keyframes marquee {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    .logo-item {
+      flex-shrink: 0;
+      height: 60px;
+      display: flex;
+      align-items: center;
+    }
+
+    .logo-item img {
+      height: 100%;
+      width: auto;
+      max-width: 110px;
+      object-fit: contain;
+      display: block;
+      opacity: 0.85;
+      transition: opacity 200ms ease;
+    }
+    .logo-item img:hover { opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <!-- ─── NAVIGATION ─────────────────────────────────────────────── -->
+  <div class="nav-wrap">
+    <nav class="nav">
+      <div style="width:206px;flex-shrink:0;">
+        <img
+          class="nav-logo"
+          src="https://www.figma.com/api/mcp/asset/e60e6b9c-7ea8-4c80-a4c1-23fd77250838"
+          alt="Cerebras"
+        >
+      </div>
+
+      <ul class="nav-menu">
+        <li><a href="#">Products</a></li>
+        <li><a href="#">Customers</a></li>
+        <li><a href="#">Developers</a></li>
+        <li><a href="#">Resources</a></li>
+        <li><a href="#">Pricing</a></li>
+        <li><a href="#">Company</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <button class="btn btn-ghost btn-icon" aria-label="Search">
+          <img src="https://www.figma.com/api/mcp/asset/a4a24bbb-044c-469e-a612-b979f09262b4" alt="" style="width:16px;height:16px;display:block;">
+        </button>
+        <a href="#" class="btn btn-dark">Contact us</a>
+        <a href="#" class="btn btn-gradient">Get started</a>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ─── HERO ───────────────────────────────────────────────────── -->
+  <section class="hero">
+    <!-- orange gradient background image -->
+    <div class="hero-bg"></div>
+    <div class="hero-inner">
+      <div class="hero-text">
+        <h1 class="hero-headline">
+          <span class="hl">The <span class="gold-text">World's Fastest AI</span></span>
+          <span class="hl">Runs on The <span class="gold-text">World's Biggest chip</span></span>
+        </h1>
+        <p class="hero-body">The Cerebras Wafer-Scale Engine is purpose-built for ultra-fast AI. It is 58x larger than GPUs. Designed for builders who want to do extraordinary things.</p>
+        <div class="hero-cta">
+          <a href="#" class="btn btn-white">Learn more</a>
+        </div>
+      </div>
+
+      <!-- Chip size comparison — animates in on load -->
+      <div class="chip-container">
+        <div class="chip-comparison">
+
+          <!-- Cerebras WSE-3 -->
+          <div class="chip-item">
+            <div class="chip-wse3">
+              <div class="chip-wafer">
+                <canvas id="spline-canvas" width="380" height="380"></canvas>
+              </div>
+            </div>
+            <svg class="ruler-wse3-svg" id="ruler-wse3" height="18" style="display:block;"></svg>
+            <div class="chip-label chip-label-wse3">CEREBRAS<br>Wafer Scale Engine 3</div>
+          </div>
+
+          <!-- NVIDIA B200 -->
+          <div class="chip-item">
+            <div class="chip-b200-wrap">
+              <div class="chip-b200">
+                <div class="chip-b200-tile">
+                  <img src="https://www.figma.com/api/mcp/asset/e957e6c3-c450-484f-b98c-596ecdf83c15" alt="">
+                </div>
+                <div class="chip-b200-tile">
+                  <img src="https://www.figma.com/api/mcp/asset/e957e6c3-c450-484f-b98c-596ecdf83c15" alt="">
+                </div>
+              </div>
+            </div>
+            <svg class="ruler-b200-svg" id="ruler-b200" height="18" style="display:block;"></svg>
+            <div class="chip-label chip-label-b200">NVIDIA GPU<br>B200</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── LOGO STRIP ─────────────────────────────────────────────── -->
+  <div class="logos-section">
+    <div class="logos-texture logos-texture-left"></div>
+
+    <div class="logos-center">
+      <div class="logos-center-bg"></div>
+      <div class="logos-track">
+        <!-- set A -->
+        <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/2b5db96e-0cb9-4389-8ccf-7966f80601fb" alt="Nasdaq"></div>
+        <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/3be6fd4a-c73d-466a-9f02-efdabe25b0d5" alt="Partner"></div>
+        <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/30c60449-bdc7-4bc8-a4fe-a85a4cdd77dc" alt="LangChain"></div>
+        <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/f9b5061f-427a-4bdb-a480-5057d76cf94e" alt="Partner"></div>
+        <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/ec83f52e-ae53-429a-be4e-1da996349355" alt="Partner"></div>
+        <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/666060c7-02b9-4132-93a2-3e9df55d304f" alt="Docker"></div>
+        <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/fdec4efd-ea03-4ea0-ab0f-398ca44551ec" alt="GSK"></div>
+        <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/216707a0-2662-4a81-8bb9-c8fc125920c6" alt="Meter"></div>
+        <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/4b7b7321-c137-41e3-881a-00f1e26a2ea2" alt="LlamaIndex"></div>
+        <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/2f402747-c459-4ee5-9d30-1f68950205eb" alt="LiveKit"></div>
+        <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/a3c3ab3b-0b3b-45bc-9d90-590f9768ddc8" alt="Partner"></div>
+        <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/a382bc33-fa27-4c3e-8634-2572b8ba3e71" alt="W&B"></div>
+        <!-- set B (duplicate for seamless loop) -->
+        <div class="logo-item" aria-hidden="true"><img src="https://www.figma.com/api/mcp/asset/2b5db96e-0cb9-4389-8ccf-7966f80601fb" alt=""></div>
+        <div class="logo-item" aria-hidden="true"><img src="https://www.figma.com/api/mcp/asset/3be6fd4a-c73d-466a-9f02-efdabe25b0d5" alt=""></div>
+        <div class="logo-item" aria-hidden="true"><img src="https://www.figma.com/api/mcp/asset/30c60449-bdc7-4bc8-a4fe-a85a4cdd77dc" alt=""></div>
+        <div class="logo-item" aria-hidden="true"><img src="https://www.figma.com/api/mcp/asset/f9b5061f-427a-4bdb-a480-5057d76cf94e" alt=""></div>
+        <div class="logo-item" aria-hidden="true"><img src="https://www.figma.com/api/mcp/asset/ec83f52e-ae53-429a-be4e-1da996349355" alt=""></div>
+        <div class="logo-item" aria-hidden="true"><img src="https://www.figma.com/api/mcp/asset/666060c7-02b9-4132-93a2-3e9df55d304f" alt=""></div>
+        <div class="logo-item" aria-hidden="true"><img src="https://www.figma.com/api/mcp/asset/fdec4efd-ea03-4ea0-ab0f-398ca44551ec" alt=""></div>
+        <div class="logo-item" aria-hidden="true"><img src="https://www.figma.com/api/mcp/asset/216707a0-2662-4a81-8bb9-c8fc125920c6" alt=""></div>
+        <div class="logo-item" aria-hidden="true"><img src="https://www.figma.com/api/mcp/asset/4b7b7321-c137-41e3-881a-00f1e26a2ea2" alt=""></div>
+        <div class="logo-item" aria-hidden="true"><img src="https://www.figma.com/api/mcp/asset/2f402747-c459-4ee5-9d30-1f68950205eb" alt=""></div>
+        <div class="logo-item" aria-hidden="true"><img src="https://www.figma.com/api/mcp/asset/a3c3ab3b-0b3b-45bc-9d90-590f9768ddc8" alt=""></div>
+        <div class="logo-item" aria-hidden="true"><img src="https://www.figma.com/api/mcp/asset/a382bc33-fa27-4c3e-8634-2572b8ba3e71" alt=""></div>
+      </div>
+    </div>
+
+    <div class="logos-texture logos-texture-right"></div>
+  </div>
+
+  <script type="module">
+    import { Application } from './spline/runtime.js';
+    const canvas = document.getElementById('spline-canvas');
+    const app = new Application(canvas, { alpha: true, wasmPath: './spline/' });
+    app.load('./spline/scene.splinecode');
+
+    // Canvas has pointer-events:none so it never receives events directly.
+    // Remap full-page mouse position into the canvas's coordinate space so Spline
+    // always sees 0→1 normalized coordinates regardless of where the cursor is.
+    // This works correctly because the canvas has no CSS scale transform —
+    // getBoundingClientRect() returns the true 380×380 bounds.
+    function remapToCanvas(clientX, clientY) {
+      const r = canvas.getBoundingClientRect();
+      return {
+        x: r.left + (clientX / window.innerWidth)  * r.width,
+        y: r.top  + (clientY / window.innerHeight) * r.height,
+      };
+    }
+
+    // e.isTrusted is false for synthetic (script-dispatched) events.
+    // Without this guard, the bubbling synthetic event re-enters the window
+    // listener, remaps again, dispatches again — infinite loop that drifts
+    // coordinates off-screen and kills the effect.
+    window.addEventListener('pointermove', (e) => {
+      if (!e.isTrusted) return;
+      const { x, y } = remapToCanvas(e.clientX, e.clientY);
+      canvas.dispatchEvent(new PointerEvent('pointermove', {
+        clientX: x, clientY: y, bubbles: true, cancelable: true
+      }));
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (!e.isTrusted) return;
+      const { x, y } = remapToCanvas(e.clientX, e.clientY);
+      canvas.dispatchEvent(new MouseEvent('mousemove', {
+        clientX: x, clientY: y, bubbles: true, cancelable: true
+      }));
+    });
+  </script>
+
+  <script>
+    function drawRuler(svgId, totalWidth) {
+      const svg = document.getElementById(svgId);
+      if (!svg) return;
+      svg.setAttribute('width', totalWidth);
+      svg.setAttribute('viewBox', '0 0 ' + totalWidth + ' 18');
+      const pitch = 4.6;
+      const count = Math.round(totalWidth / pitch);
+      const ap = totalWidth / count;
+      let d = '';
+      for (let i = 0; i <= count; i++) {
+        const x = i * ap;
+        const edge = (i === 0 || i === count);
+        const h = edge ? 18 : 12;
+        const y1 = edge ? 0 : 3;
+        d += `M${x.toFixed(2)},${y1} L${x.toFixed(2)},${(y1+h).toFixed(2)} `;
+      }
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d', d);
+      path.setAttribute('stroke', 'rgba(255,255,255,0.7)');
+      path.setAttribute('stroke-width', '1');
+      path.setAttribute('fill', 'none');
+      svg.appendChild(path);
+    }
+    drawRuler('ruler-wse3', 380);
+    drawRuler('ruler-b200', 80);
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cerebras — Hero Carousel F</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Sometype+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange: #F15A29;
+      --orange-hover: #d94e21;
+      --mandarin: #FF985D;
+      --ink: #1A1A1A;
+      --cream: #F7F5F2;
+      --bg-dark: #0e0e0e;
+      --radius-card: 24px;
+      --radius-sm: 2px;
+    }
+
+    html, body { height: 100%; }
+    body {
+      background: var(--bg-dark);
+      color: #fff;
+      font-family: 'Manrope', sans-serif;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── NAV ─────────────────────────────────────────────────────── */
+    .nav-wrap {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 300; height: 72px;
+    }
+    .nav {
+      height: 100%;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 40px;
+    }
+    .nav-logo {
+      width: 100px; height: 38px;
+      object-fit: contain; object-position: left center;
+      display: block;
+    }
+    .nav-menu {
+      display: flex; align-items: center; gap: 28px; list-style: none;
+    }
+    .nav-menu a {
+      font-family: 'Manrope', sans-serif; font-weight: 600; font-size: 13px;
+      color: rgba(255,255,255,0.6); text-decoration: none;
+      transition: color 150ms ease;
+    }
+    .nav-menu a:hover { color: #fff; }
+    .nav-actions { display: flex; align-items: center; gap: 8px; }
+    .btn-nav {
+      display: inline-flex; align-items: center; justify-content: center;
+      height: 34px; padding: 0 16px; border-radius: 999px; border: none;
+      cursor: pointer; font-family: 'Sometype Mono', monospace; font-weight: 600;
+      font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
+      text-decoration: none; transition: background 150ms ease, color 150ms ease;
+    }
+    .btn-outline {
+      background: transparent; color: rgba(255,255,255,0.7);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .btn-outline:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .btn-fill {
+      background: var(--orange); color: #fff;
+    }
+    .btn-fill:hover { background: var(--orange-hover); }
+
+    /* ─── HERO STAGE ─────────────────────────────────────────────── */
+    .hero {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      min-height: 600px;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      background: var(--bg-dark);
+    }
+
+    /* ─── CARD TRACK ─────────────────────────────────────────────── */
+    /*
+      Layout (matching DeepMind reference):
+        - Active card  : centered, width ~62vw, height ~78vh, fully visible
+        - Prev card    : left edge sliver only (~6% visible)
+        - Next card    : right edge visible ~22%, at 80% scale
+      Implemented by absolute-positioning all cards and using data-pos + CSS transitions.
+    */
+
+    .card-track {
+      position: absolute;
+      inset: 0;
+      /* perspective for subtle 3D feel */
+      perspective: 1200px;
+    }
+
+    .c-card {
+      position: absolute;
+      top: 50%;
+      width: 62vw;
+      max-width: 960px;
+      aspect-ratio: 16 / 10;
+      border-radius: var(--radius-card);
+      overflow: hidden;
+      cursor: pointer;
+      will-change: transform, opacity;
+      transition:
+        transform 700ms cubic-bezier(.4,0,.16,1),
+        opacity   700ms cubic-bezier(.4,0,.16,1),
+        filter    700ms cubic-bezier(.4,0,.16,1);
+    }
+
+    /* ── position states ── */
+    /* active: centered (left = 50% - card/2, but we use translate instead) */
+    .c-card[data-pos="active"] {
+      left: 50%;
+      transform: translateX(-50%) translateY(-50%) scale(1);
+      opacity: 1;
+      filter: brightness(1);
+      z-index: 10;
+      cursor: default;
+    }
+    /* prev: sliver from left edge */
+    .c-card[data-pos="prev"] {
+      left: 0;
+      transform: translateX(-88%) translateY(-50%) scale(0.88);
+      opacity: 0.6;
+      filter: brightness(0.5);
+      z-index: 5;
+    }
+    /* next: peeking ~22% from right */
+    .c-card[data-pos="next"] {
+      left: 100%;
+      transform: translateX(-26%) translateY(-50%) scale(0.88);
+      opacity: 0.75;
+      filter: brightness(0.55);
+      z-index: 5;
+    }
+    /* far cards hidden */
+    .c-card[data-pos="hidden-left"] {
+      left: 0;
+      transform: translateX(-120%) translateY(-50%) scale(0.75);
+      opacity: 0;
+      z-index: 1;
+    }
+    .c-card[data-pos="hidden-right"] {
+      left: 100%;
+      transform: translateX(20%) translateY(-50%) scale(0.75);
+      opacity: 0;
+      z-index: 1;
+    }
+
+    /* ─── CARD INTERIOR ──────────────────────────────────────────── */
+    .c-card-bg {
+      position: absolute; inset: 0;
+    }
+    .c-card-bg img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center;
+      display: block;
+    }
+
+    /* per-card color overlays */
+    .c-card-overlay {
+      position: absolute; inset: 0;
+    }
+
+    /* centered content block */
+    .c-card-body {
+      position: absolute; inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 48px 80px 80px;
+      z-index: 5;
+      /* hide on non-active; fade in when active */
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 350ms 180ms ease, transform 350ms 180ms ease;
+    }
+    .c-card[data-pos="active"] .c-card-body {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .c-card-eyebrow {
+      font-family: 'Sometype Mono', monospace;
+      font-weight: 600; font-size: 10px;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--mandarin);
+      margin-bottom: 16px;
+    }
+    .c-card-headline {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 300;
+      font-size: clamp(32px, 3.8vw, 58px);
+      line-height: 1.05; letter-spacing: -0.03em;
+      color: #fff;
+      margin-bottom: 14px;
+    }
+    .c-card-headline .hi {
+      background: linear-gradient(90deg, #FFCE5C 0%, #F76D32 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .c-card-sub {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 400; font-size: 15px; line-height: 1.55;
+      color: rgba(255,255,255,0.6);
+      max-width: 440px; margin-bottom: 32px;
+    }
+    .c-card-ctas {
+      display: flex; align-items: center; justify-content: center;
+      gap: 12px; flex-wrap: wrap;
+    }
+    .card-cta-primary {
+      display: inline-flex; align-items: center; justify-content: center;
+      height: 42px; padding: 0 24px;
+      background: rgba(255,255,255,0.95); color: var(--ink);
+      border-radius: 999px; border: none; cursor: pointer;
+      font-family: 'Sometype Mono', monospace; font-weight: 600;
+      font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+      text-decoration: none;
+      transition: background 150ms ease;
+    }
+    .card-cta-primary:hover { background: var(--orange); color: #fff; }
+    .card-cta-ghost {
+      display: inline-flex; align-items: center; justify-content: center;
+      height: 42px; padding: 0 24px;
+      background: transparent; color: rgba(255,255,255,0.8);
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.3);
+      cursor: pointer;
+      font-family: 'Sometype Mono', monospace; font-weight: 600;
+      font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+      text-decoration: none;
+      transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
+    }
+    .card-cta-ghost:hover {
+      border-color: rgba(255,255,255,0.6);
+      background: rgba(255,255,255,0.07);
+      color: #fff;
+    }
+
+    /* ─── CARD VISUALS (non-photo slides) ────────────────────────── */
+
+    /* slide 2: multimodal — abstract chip glow centered */
+    .visual-multi {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 2;
+    }
+    .multi-lockup {
+      display: flex; flex-direction: column; align-items: center; gap: 24px;
+    }
+    .multi-row { display: flex; align-items: center; gap: 16px; }
+    .multi-pill {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 20px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 999px;
+      backdrop-filter: blur(12px);
+    }
+    .multi-dot {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--orange);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .multi-name {
+      font-family: 'Sometype Mono', monospace; font-weight: 600;
+      font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase;
+      color: #fff;
+    }
+    .multi-sep {
+      font-family: 'Manrope', sans-serif; font-weight: 300;
+      font-size: 32px; color: rgba(255,255,255,0.3);
+    }
+    .multi-stat {
+      font-family: 'Manrope', sans-serif; font-weight: 300;
+      font-size: 72px; line-height: 1; letter-spacing: -0.04em;
+      background: linear-gradient(90deg, #FFCE5C 0%, #F76D32 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 50px rgba(241,90,41,0.4));
+    }
+    .multi-unit {
+      font-family: 'Sometype Mono', monospace; font-weight: 600;
+      font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+    }
+
+    /* slide 3: speed */
+    .visual-speed {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 2;
+    }
+    .speed-block {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      margin-top: -20px;
+    }
+    .speed-num {
+      font-family: 'Manrope', sans-serif; font-weight: 300;
+      font-size: clamp(72px, 9vw, 128px);
+      line-height: 1; letter-spacing: -0.05em;
+      background: linear-gradient(135deg, #FFE099 0%, #F76D32 55%, #c83a08 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 80px rgba(241,90,41,0.45));
+    }
+    .speed-unit {
+      font-family: 'Sometype Mono', monospace; font-weight: 600;
+      font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+    }
+    .speed-bars {
+      margin-top: 16px;
+      display: flex; flex-direction: column; gap: 8px;
+      width: 200px;
+    }
+    .speed-bar-row {
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .speed-bar-label {
+      font-family: 'Sometype Mono', monospace; font-weight: 600;
+      font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+    }
+    .speed-bar-track {
+      height: 3px; background: rgba(255,255,255,0.08);
+      border-radius: 2px; overflow: hidden;
+    }
+    .speed-bar-fill {
+      height: 100%; border-radius: 2px;
+    }
+
+    /* ─── BOTTOM CONTROLS ────────────────────────────────────────── */
+    .hero-controls {
+      position: absolute;
+      bottom: 32px; left: 40px; right: 40px;
+      z-index: 50;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .explore-label {
+      font-family: 'Sometype Mono', monospace; font-weight: 600;
+      font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+      color: rgba(255,255,255,0.25);
+    }
+    .controls-right {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .progress-pips {
+      display: flex; align-items: center; gap: 6px;
+    }
+    .pip {
+      height: 2px; width: 20px;
+      background: rgba(255,255,255,0.18);
+      border-radius: 1px;
+      position: relative; overflow: hidden;
+      cursor: pointer;
+      transition: width 250ms ease;
+    }
+    .pip.active { width: 36px; }
+    .pip-fill {
+      position: absolute; top: 0; left: 0; bottom: 0;
+      background: rgba(255,255,255,0.8); width: 0%;
+    }
+    .pip.active .pip-fill {
+      animation: pip-fill 6s linear forwards;
+    }
+    @keyframes pip-fill { from { width: 0%; } to { width: 100%; } }
+
+    .arr {
+      width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 150ms ease, border-color 150ms ease;
+    }
+    .arr:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.35); }
+    .arr svg { width: 13px; height: 13px; }
+
+    /* ─── BELOW HERO ─────────────────────────────────────────────── */
+    .below-hero {
+      background: #0e0e0e;
+      padding: 64px 64px 80px;
+    }
+    .section-label {
+      font-family: 'Manrope', sans-serif; font-weight: 500;
+      font-size: 13px; color: rgba(255,255,255,0.3);
+      margin-bottom: 36px;
+    }
+    .blog-grid {
+      display: grid;
+      grid-template-columns: 1fr 1px 1fr 1px 1fr;
+      align-items: stretch;
+    }
+    .blog-sep {
+      background: rgba(255,255,255,0.08); align-self: stretch;
+      transform: scaleY(0.2); transform-origin: center;
+      transition: transform 350ms ease, background 350ms ease;
+    }
+    .blog-card:hover + .blog-sep,
+    .blog-sep:has(+ .blog-card:hover) {
+      transform: scaleY(1); background: rgba(255,255,255,0.2);
+    }
+    .blog-card {
+      padding: 0 32px; min-height: 180px;
+      display: flex; flex-direction: column; justify-content: space-between;
+      gap: 16px; cursor: pointer;
+    }
+    .blog-card:first-child { padding-left: 0; }
+    .blog-card:last-child  { padding-right: 0; }
+    .blog-top { display: flex; flex-direction: column; gap: 12px; }
+    .tag {
+      align-self: flex-start;
+      display: inline-flex; padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      background: var(--mandarin);
+      font-family: 'Sometype Mono', monospace; font-weight: 600;
+      font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase;
+      color: var(--ink);
+    }
+    .blog-title {
+      font-family: 'Manrope', sans-serif; font-weight: 500;
+      font-size: 18px; line-height: 1.3; letter-spacing: -0.02em; color: #fff;
+    }
+    .blog-desc {
+      font-family: 'Manrope', sans-serif; font-size: 13px; line-height: 1.5;
+      color: rgba(255,255,255,0.4);
+      opacity: 0; transform: translateY(5px);
+      transition: opacity 200ms ease, transform 200ms ease;
+    }
+    .blog-link {
+      display: flex; align-items: center; gap: 8px;
+      opacity: 0; transform: translateY(5px);
+      transition: opacity 200ms ease 30ms, transform 200ms ease 30ms;
+      text-decoration: none; margin-top: auto;
+    }
+    .blog-card:hover .blog-desc,
+    .blog-card:hover .blog-link { opacity: 1; transform: translateY(0); }
+    .blog-arrow {
+      width: 26px; height: 26px; background: var(--orange);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: background 150ms ease;
+    }
+    .blog-card:hover .blog-arrow { background: var(--orange-hover); }
+    .blog-arrow svg { width: 12px; height: 12px; }
+    .blog-link-text {
+      font-family: 'Manrope', sans-serif; font-weight: 600;
+      font-size: 13px; color: #fff;
+    }
+
+    /* logos */
+    .logos-section {
+      padding: 48px 0; overflow: hidden; position: relative; background: #0e0e0e;
+    }
+    .logos-section::before, .logos-section::after {
+      content: ''; position: absolute; top: 0; bottom: 0;
+      width: 80px; z-index: 2; pointer-events: none;
+    }
+    .logos-section::before { left: 0; background: linear-gradient(to right, #0e0e0e, transparent); }
+    .logos-section::after  { right: 0; background: linear-gradient(to left, #0e0e0e, transparent); }
+    .logos-track {
+      display: flex; align-items: center; gap: 52px;
+      width: max-content;
+      animation: marquee 32s linear infinite;
+    }
+    .logos-track:hover { animation-play-state: paused; }
+    @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    .logo-item { flex-shrink: 0; height: 44px; display: flex; align-items: center; }
+    .logo-item img {
+      height: 100%; width: auto; max-width: 100px; object-fit: contain;
+      filter: brightness(0) invert(1); opacity: 0.4; transition: opacity 200ms ease;
+    }
+    .logo-item img:hover { opacity: 0.8; }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <div class="nav-wrap">
+    <nav class="nav">
+      <img class="nav-logo" src="https://www.figma.com/api/mcp/asset/e60e6b9c-7ea8-4c80-a4c1-23fd77250838" alt="Cerebras">
+      <ul class="nav-menu">
+        <li><a href="#">Products</a></li>
+        <li><a href="#">Customers</a></li>
+        <li><a href="#">Developers</a></li>
+        <li><a href="#">Resources</a></li>
+        <li><a href="#">Pricing</a></li>
+        <li><a href="#">Company</a></li>
+      </ul>
+      <div class="nav-actions">
+        <a href="#" class="btn-nav btn-outline">Contact us</a>
+        <a href="#" class="btn-nav btn-fill">Get started</a>
+      </div>
+    </nav>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero" id="hero">
+
+    <div class="card-track">
+
+      <!-- CARD 0: CHIP (wafer image) -->
+      <div class="c-card" data-index="0" data-pos="active">
+        <div class="c-card-bg">
+          <img src="Cerebras Design System 2/assets/imagery/wafer-planview.png" alt="Cerebras WSE-3 Wafer">
+        </div>
+        <div class="c-card-overlay" style="background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.55) 60%, rgba(0,0,0,0.82) 100%);"></div>
+        <div class="c-card-body">
+          <div class="c-card-eyebrow">Hardware</div>
+          <h1 class="c-card-headline">
+            The World's <span class="hi">Fastest AI</span><br>
+            runs on The World's<br>
+            <span class="hi">Biggest Chip</span>
+          </h1>
+          <p class="c-card-sub">The Wafer Scale Engine 3 — 57× larger than the biggest GPU, purpose-built for AI inference at production scale.</p>
+          <div class="c-card-ctas">
+            <a href="#" class="card-cta-primary">Learn more</a>
+            <a href="#" class="card-cta-ghost">See the specs</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 1: MULTIMODAL -->
+      <div class="c-card" data-index="1" data-pos="next">
+        <div class="c-card-bg" style="background: radial-gradient(ellipse 110% 90% at 55% 40%, #7a2000 0%, #2e0a00 45%, #130200 100%);"></div>
+        <div class="c-card-overlay" style="background: linear-gradient(to bottom, transparent 20%, rgba(0,0,0,0.7) 100%);"></div>
+        <div class="visual-multi">
+          <div class="multi-lockup">
+            <div class="multi-row">
+              <div class="multi-pill">
+                <div class="multi-dot">
+                  <svg viewBox="0 0 10 10" width="12" height="12" fill="none">
+                    <circle cx="5" cy="5" r="4" fill="#fff" fill-opacity="0.9"/>
+                    <circle cx="5" cy="5" r="2" fill="#F15A29"/>
+                  </svg>
+                </div>
+                <span class="multi-name">Cerebras</span>
+              </div>
+              <span class="multi-sep">×</span>
+              <div class="multi-pill">
+                <span class="multi-name" style="color:rgba(255,255,255,0.75);">Gemma 4</span>
+              </div>
+            </div>
+            <div class="multi-stat">1,500+</div>
+            <div class="multi-unit">tokens / second</div>
+          </div>
+        </div>
+        <div class="c-card-body">
+          <div class="c-card-eyebrow">Multimodal</div>
+          <h2 class="c-card-headline">The fastest inference<br>is now <span class="hi">multimodal</span></h2>
+          <p class="c-card-sub">Gemma 4 running at 1,500+ tokens per second — 10× faster than any GPU cluster on the market.</p>
+          <div class="c-card-ctas">
+            <a href="#" class="card-cta-primary">Read more</a>
+            <a href="#" class="card-cta-ghost">View benchmark</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 2: SPEED -->
+      <div class="c-card" data-index="2" data-pos="hidden-right">
+        <div class="c-card-bg" style="background: radial-gradient(ellipse 90% 70% at 60% 30%, #5a3200 0%, #1e0c00 50%, #0a0400 100%);"></div>
+        <div class="c-card-overlay" style="background: linear-gradient(to bottom, transparent 15%, rgba(0,0,0,0.72) 100%);"></div>
+        <div class="visual-speed">
+          <div class="speed-block">
+            <div class="speed-num">10×</div>
+            <div class="speed-unit">faster than GPU</div>
+            <div class="speed-bars">
+              <div class="speed-bar-row">
+                <div class="speed-bar-label">Cerebras — 1,500 tok/s</div>
+                <div class="speed-bar-track">
+                  <div class="speed-bar-fill" style="width:100%;background:var(--orange);"></div>
+                </div>
+              </div>
+              <div class="speed-bar-row">
+                <div class="speed-bar-label">H100 GPU — 150 tok/s</div>
+                <div class="speed-bar-track">
+                  <div class="speed-bar-fill" style="width:10%;background:rgba(255,255,255,0.2);"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="c-card-body">
+          <div class="c-card-eyebrow">Performance</div>
+          <h2 class="c-card-headline">Deploy at<br><span class="hi">unprecedented</span> speed</h2>
+          <p class="c-card-sub">Full precision, full model scale — no throttling, no compromises on size or accuracy.</p>
+          <div class="c-card-ctas">
+            <a href="#" class="card-cta-primary">Run the benchmark</a>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /card-track -->
+
+    <!-- CONTROLS -->
+    <div class="hero-controls">
+      <span class="explore-label">Explore Cerebras</span>
+      <div class="controls-right">
+        <div class="progress-pips" id="pips">
+          <div class="pip active" data-i="0"><div class="pip-fill"></div></div>
+          <div class="pip" data-i="1"><div class="pip-fill"></div></div>
+          <div class="pip" data-i="2"><div class="pip-fill"></div></div>
+        </div>
+        <div class="arr" id="prevBtn">
+          <svg viewBox="0 0 13 13" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8.5 2L4 6.5l4.5 4.5"/>
+          </svg>
+        </div>
+        <div class="arr" id="nextBtn">
+          <svg viewBox="0 0 13 13" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4.5 2L9 6.5 4.5 11"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- BELOW HERO -->
+  <div class="below-hero">
+    <p class="section-label">Latest from Cerebras</p>
+    <div class="blog-grid">
+      <div class="blog-card">
+        <div class="blog-top">
+          <span class="tag">Blog</span>
+          <p class="blog-title">The Economics of AI Reasoning</p>
+          <p class="blog-desc">Deploy frontier models at production scale with world-record speeds — no compromises.</p>
+        </div>
+        <a href="#" class="blog-link">
+          <span class="blog-arrow"><svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h8M7 3l3 3-3 3"/></svg></span>
+          <span class="blog-link-text">Read the article</span>
+        </a>
+      </div>
+      <div class="blog-sep"></div>
+      <div class="blog-card">
+        <div class="blog-top">
+          <span class="tag">Press Release</span>
+          <p class="blog-title">Cerebras Systems Sets Date of First-Quarter 2026 Financial Results</p>
+          <p class="blog-desc">Stay up to date with the latest financial news and milestones.</p>
+        </div>
+        <a href="#" class="blog-link">
+          <span class="blog-arrow"><svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h8M7 3l3 3-3 3"/></svg></span>
+          <span class="blog-link-text">Read the press release</span>
+        </a>
+      </div>
+      <div class="blog-sep"></div>
+      <div class="blog-card">
+        <div class="blog-top">
+          <span class="tag">Blog</span>
+          <p class="blog-title">Which is faster: Kimi K2.6 on Cerebras or Gemini Flash?</p>
+          <p class="blog-desc">A head-to-head benchmark — see how Cerebras stacks up.</p>
+        </div>
+        <a href="#" class="blog-link">
+          <span class="blog-arrow"><svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h8M7 3l3 3-3 3"/></svg></span>
+          <span class="blog-link-text">Read the article</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="logos-section">
+    <div class="logos-track">
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/b40f0e66-49a1-415f-a45e-5d63dd61eae6" alt="W&B"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/55f989a7-af07-4fa1-8267-4b689cfc9c53" alt="Partner"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/733d0eba-8e4f-48de-a469-003bfdb012f7" alt="Aleph Alpha"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/25acab90-f92a-4307-b0ca-9cb29d747af1" alt="Nasdaq"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/b933a170-d7e6-4379-bb4f-1ea90ae3f26b" alt="LangChain"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/eec8cfbe-eb8e-4113-81ef-d03fce42030b" alt="Partner"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/d408a286-8416-4078-b497-57deaac8a455" alt="Docker"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/859cc87d-42df-48c9-9940-21c0eba1fa5e" alt="GSK"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/578f0ca9-e82c-4611-8fdc-081712ca3262" alt="Meter"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/6a0e6dac-97dc-4545-879a-623ec118bad0" alt="LlamaIndex"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/c8034897-1fe5-464d-a592-b3829d553175" alt="LiveKit"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/a0d863ac-1bff-4b0a-a6d1-9606bda89dc5" alt="Partner"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/b40f0e66-49a1-415f-a45e-5d63dd61eae6" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/55f989a7-af07-4fa1-8267-4b689cfc9c53" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/733d0eba-8e4f-48de-a469-003bfdb012f7" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/25acab90-f92a-4307-b0ca-9cb29d747af1" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/b933a170-d7e6-4379-bb4f-1ea90ae3f26b" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/eec8cfbe-eb8e-4113-81ef-d03fce42030b" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/d408a286-8416-4078-b497-57deaac8a455" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/859cc87d-42df-48c9-9940-21c0eba1fa5e" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/578f0ca9-e82c-4611-8fdc-081712ca3262" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/6a0e6dac-97dc-4545-879a-623ec118bad0" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/c8034897-1fe5-464d-a592-b3829d553175" alt="" aria-hidden="true"></div>
+      <div class="logo-item"><img src="https://www.figma.com/api/mcp/asset/a0d863ac-1bff-4b0a-a6d1-9606bda89dc5" alt="" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <script>
+    const TOTAL = 3;
+    let current = 0;
+    let autoTimer = null;
+
+    const cards = Array.from(document.querySelectorAll('.c-card'));
+    const pips  = Array.from(document.querySelectorAll('.pip'));
+
+    const POS = ['active', 'next', 'hidden-right', 'prev', 'hidden-left'];
+
+    function posFor(cardIndex) {
+      const delta = ((cardIndex - current) % TOTAL + TOTAL) % TOTAL;
+      // delta 0 = active, 1 = next, TOTAL-1 = prev, rest = hidden
+      if (delta === 0) return 'active';
+      if (delta === 1) return 'next';
+      if (delta === TOTAL - 1) return 'prev';
+      return delta < TOTAL / 2 ? 'hidden-right' : 'hidden-left';
+    }
+
+    function applyState() {
+      cards.forEach((c, i) => c.setAttribute('data-pos', posFor(i)));
+      pips.forEach((p, i) => {
+        const fill = p.querySelector('.pip-fill');
+        if (i === current) {
+          p.classList.add('active');
+          fill.style.animation = 'none';
+          fill.offsetHeight;
+          fill.style.animation = '';
+        } else {
+          p.classList.remove('active');
+          fill.style.animation = 'none';
+        }
+      });
+    }
+
+    function goTo(i) {
+      current = ((i % TOTAL) + TOTAL) % TOTAL;
+      applyState();
+      resetAuto();
+    }
+
+    function next() { goTo(current + 1); }
+    function prev() { goTo(current - 1); }
+
+    document.getElementById('nextBtn').addEventListener('click', next);
+    document.getElementById('prevBtn').addEventListener('click', prev);
+    pips.forEach(p => p.addEventListener('click', () => goTo(+p.dataset.i)));
+
+    // click adjacent cards to navigate
+    cards.forEach(c => {
+      c.addEventListener('click', () => {
+        const pos = c.getAttribute('data-pos');
+        if (pos === 'next') next();
+        else if (pos === 'prev') prev();
+      });
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight') next();
+      if (e.key === 'ArrowLeft')  prev();
+    });
+
+    function startAuto() { autoTimer = setInterval(next, 6000); }
+    function resetAuto() { clearInterval(autoTimer); startAuto(); }
+
+    const hero = document.getElementById('hero');
+    hero.addEventListener('mouseenter', () => clearInterval(autoTimer));
+    hero.addEventListener('mouseleave', startAuto);
+
+    applyState();
+    startAuto();
+  </script>
+</body>
+</html>

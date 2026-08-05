@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cerebras — Speed Video Overlay Template</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600&family=Sometype+Mono:wght@400;600&display=swap');
+
+  :root{
+    --ink:#1A1A1A;
+    --grey-700:#4D4C4B;
+    --grey-500:#807E7D;
+    --grey-300:#CCCAC8;
+    --grey-200:#E6E6E6;
+    --paper:#ECE8E4;
+    --paper-50:#F7F5F2;
+    --white:#FFFFFF;
+    --orange:#F15A29;
+    --orange-bright:#F74E11;
+    --border:rgba(0,0,0,0.12);
+    --font-sans:"Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-mono:"Sometype Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--paper-50);
+    color:var(--ink);
+    font-family:var(--font-sans);
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:80px;
+  }
+
+  /* ── Page chrome (not part of the exported overlay) ───────────── */
+  .page-head{
+    max-width:1180px; margin:0 auto; padding:64px 32px 40px;
+  }
+  .eyebrow{
+    font-family:var(--font-mono); font-weight:600; font-size:12px;
+    letter-spacing:0.08em; text-transform:uppercase; color:var(--orange);
+    display:flex; align-items:center; gap:8px; margin:0 0 16px;
+  }
+  .eyebrow::before{ content:""; width:6px; height:6px; background:var(--orange); border-radius:50%; }
+  h1{
+    font-family:var(--font-sans); font-weight:300; font-size:44px; line-height:1.05;
+    letter-spacing:-0.01em; margin:0 0 14px; max-width:820px;
+  }
+  .page-head p{
+    font-size:16px; line-height:1.55; color:var(--grey-700); max-width:640px; margin:0;
+  }
+
+  section.block{ max-width:1180px; margin:0 auto 56px; padding:0 32px; }
+  .block-head{ display:flex; align-items:baseline; justify-content:space-between; gap:24px; margin-bottom:20px; flex-wrap:wrap; }
+  .block-head h2{
+    font-family:var(--font-sans); font-weight:400; font-size:24px; margin:0;
+    display:flex; align-items:baseline; gap:12px;
+  }
+  .block-head h2 .num{ font-family:var(--font-mono); font-weight:600; color:var(--orange); font-size:14px; letter-spacing:0.04em; }
+  .block-head .desc{ font-size:14px; color:var(--grey-500); max-width:440px; line-height:1.5; margin:0; }
+
+  .card{
+    background:var(--white); border:1px solid var(--border); border-radius:2px;
+    overflow:hidden;
+  }
+
+  /* ── Segmented controls ─────────────────────────────────────── */
+  .controls-row{ display:flex; flex-wrap:wrap; gap:10px; padding:16px 20px; border-bottom:1px solid var(--border); background:var(--paper-50); }
+  .seg{ display:inline-flex; border:1px solid var(--border); border-radius:2px; overflow:hidden; }
+  .seg button{
+    font-family:var(--font-mono); font-weight:600; font-size:11px; letter-spacing:0.05em; text-transform:uppercase;
+    background:var(--white); color:var(--grey-700); border:none; padding:9px 14px; cursor:pointer;
+    border-right:1px solid var(--border); transition:background 120ms ease, color 120ms ease;
+  }
+  .seg button:last-child{ border-right:none; }
+  .seg button:hover{ background:var(--grey-200); }
+  .seg button.active{ background:var(--ink); color:var(--white); }
+  .btn{
+    font-family:var(--font-mono); font-weight:600; font-size:11px; letter-spacing:0.05em; text-transform:uppercase;
+    background:var(--ink); color:var(--white); border:1px solid var(--ink); border-radius:2px; padding:9px 16px;
+    cursor:pointer; transition:background 120ms ease, opacity 120ms ease;
+  }
+  .btn:hover{ background:var(--grey-700); }
+  .btn.accent{ background:var(--orange); border-color:var(--orange); }
+  .btn.accent:hover{ background:var(--orange-bright); }
+  .btn.ghost{ background:transparent; color:var(--ink); }
+  .btn.ghost:hover{ background:var(--grey-200); }
+
+  /* ── Stage: simulated video canvas ──────────────────────────── */
+  .stage{
+    position:relative; height:340px; display:flex; align-items:center; justify-content:center;
+    overflow:hidden; transition:background 200ms ease;
+  }
+  .stage[data-backdrop="alpha"]{
+    background-image:
+      linear-gradient(45deg, #d8d5d0 25%, transparent 25%), linear-gradient(-45deg, #d8d5d0 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #d8d5d0 75%), linear-gradient(-45deg, transparent 75%, #d8d5d0 75%);
+    background-size:24px 24px; background-position:0 0, 0 12px, 12px -12px, -12px 0px;
+    background-color:#eeece8;
+  }
+  .stage[data-backdrop="dark"]{ background:#14100D radial-gradient(circle at 30% 20%, #241a13 0%, #14100D 70%); }
+  .stage[data-backdrop="light"]{ background:var(--paper) radial-gradient(circle at 70% 30%, #fbfaf9 0%, var(--paper) 70%); }
+  .stage-tag{
+    position:absolute; top:14px; left:16px; font-family:var(--font-mono); font-size:10px; font-weight:600;
+    letter-spacing:0.08em; text-transform:uppercase; color:rgba(128,126,125,0.9); z-index:5;
+  }
+  .stage[data-backdrop="dark"] .stage-tag{ color:rgba(255,255,255,0.4); }
+
+  /* ══════════════════════════════════════════════════════════════
+     TIMER OVERLAY — the actual exportable asset
+     ══════════════════════════════════════════════════════════════ */
+  .timer-overlay{ position:relative; display:flex; flex-direction:column; align-items:center; gap:10px; }
+
+  .timer-digits{
+    position:relative; font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1, "lnum" 1;
+    font-size:88px; line-height:1; letter-spacing:0.01em;
+    transition:opacity 260ms ease, filter 260ms ease, transform 260ms ease;
+  }
+  .timer-digits.font-manrope{ font-family:var(--font-sans); font-weight:300; }
+  .timer-digits.font-mono{ font-family:var(--font-mono); font-weight:600; letter-spacing:0.02em; }
+  .timer-digits.color-white{ color:var(--white); text-shadow:0 2px 18px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.4); }
+  .timer-digits.color-black{ color:var(--ink); text-shadow:0 2px 18px rgba(255,255,255,0.6), 0 1px 2px rgba(255,255,255,0.5); }
+
+  /* ghost trail — fast-forward motion cue behind the digits */
+  .ghost-trail{ position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity 180ms ease; }
+  .ghost-trail span{
+    position:absolute; inset:0; display:block; text-align:center;
+    font:inherit; color:inherit; filter:blur(6px);
+  }
+  .ghost-trail span:nth-child(1){ animation:ghost1 620ms ease-in-out infinite; opacity:.22; }
+  .ghost-trail span:nth-child(2){ animation:ghost2 620ms ease-in-out infinite; opacity:.14; filter:blur(10px); }
+  .ghost-trail span:nth-child(3){ animation:ghost3 620ms ease-in-out infinite; opacity:.08; filter:blur(14px); }
+  @keyframes ghost1{ 0%{ transform:translateX(0); } 50%{ transform:translateX(-14px); } 100%{ transform:translateX(0); } }
+  @keyframes ghost2{ 0%{ transform:translateX(0); } 50%{ transform:translateX(-26px); } 100%{ transform:translateX(0); } }
+  @keyframes ghost3{ 0%{ transform:translateX(0); } 50%{ transform:translateX(-40px); } 100%{ transform:translateX(0); } }
+
+  .timer-overlay[data-ff="1"] .ghost-trail{ opacity:1; }
+  .timer-overlay[data-ff="1"] .timer-digits{ animation:ff-jitter 620ms ease-in-out infinite; }
+  @keyframes ff-jitter{ 0%,100%{ transform:translateX(0); } 50%{ transform:translateX(-2px); } }
+
+  /* speed badge anchor — sits below the digit box regardless of its auto-sized height */
+  .speed-badge-anchor{
+    position:absolute; left:50%; top:100%; margin-top:18px; transform:translateX(-50%);
+  }
+  .speed-badge{
+    display:inline-flex; align-items:center; gap:8px; height:30px; padding:0 12px 0 10px;
+    border:1px solid var(--orange); border-radius:2px; background:rgba(241,90,41,0.12);
+    opacity:0; transform:translateY(6px) scale(0.92); transition:opacity 200ms ease, transform 200ms ease;
+    overflow:hidden;
+  }
+  .timer-overlay[data-ff="1"] .speed-badge{ opacity:1; transform:translateY(0) scale(1); }
+  .speed-badge .chev-track{
+    width:20px; height:14px; overflow:hidden; position:relative; flex:none;
+  }
+  .speed-badge .chev-track .chevs{
+    position:absolute; top:0; left:0; display:flex; gap:3px;
+    animation:chev-scroll 900ms linear infinite;
+    font-family:var(--font-mono); font-size:13px; font-weight:600; color:var(--orange);
+  }
+  @keyframes chev-scroll{ from{ transform:translateX(0); } to{ transform:translateX(-23px); } }
+  .speed-badge .speed-value{
+    font-family:var(--font-mono); font-weight:600; font-size:13px; letter-spacing:0.04em; color:var(--orange);
+    animation:speed-pulse 620ms ease-in-out infinite;
+  }
+  @keyframes speed-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.1); } }
+  .speed-badge.flash{ animation:badge-flash 340ms ease; }
+  @keyframes badge-flash{ 0%{ background:var(--orange); } 100%{ background:rgba(241,90,41,0.12); } }
+  .speed-badge.flash .speed-value, .speed-badge.flash .chevs{ color:var(--white); }
+
+  /* ── DONE transition ─────────────────────────────────────────── */
+  .done-wipe{
+    position:absolute; left:0; right:0; top:50%; height:4px; margin-top:-2px;
+    background:var(--orange); transform:scaleX(0); transform-origin:left center;
+    opacity:0; pointer-events:none;
+  }
+  .timer-overlay[data-state="wiping"] .done-wipe{
+    opacity:1; animation:wipe-sweep 460ms cubic-bezier(.65,0,.35,1) forwards;
+  }
+  @keyframes wipe-sweep{
+    0%{ transform:scaleX(0); transform-origin:left center; }
+    50%{ transform:scaleX(1); transform-origin:left center; }
+    50.001%{ transform:scaleX(1); transform-origin:right center; }
+    100%{ transform:scaleX(0); transform-origin:right center; opacity:0; }
+  }
+  .timer-overlay[data-state="wiping"] .timer-digits,
+  .timer-overlay[data-state="done"] .timer-digits,
+  .timer-overlay[data-state="settled"] .timer-digits{
+    opacity:0; filter:blur(10px); transform:scale(0.9);
+  }
+
+  .done-badge{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:14px;
+    opacity:0; transform:scale(0.7); pointer-events:none;
+  }
+  .timer-overlay[data-state="done"] .done-badge,
+  .timer-overlay[data-state="settled"] .done-badge{
+    opacity:1; transform:scale(1);
+    transition:opacity 320ms cubic-bezier(.34,1.56,.64,1) 210ms, transform 480ms cubic-bezier(.34,1.56,.64,1) 210ms;
+  }
+  .done-badge .check{
+    width:56px; height:56px; border-radius:50%; background:var(--orange); flex:none;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .done-badge .check svg{ width:28px; height:28px; }
+  .done-badge .check svg path{
+    fill:none; stroke:var(--white); stroke-width:3; stroke-linecap:round; stroke-linejoin:round;
+    stroke-dasharray:24; stroke-dashoffset:24;
+  }
+  .timer-overlay[data-state="done"] .done-badge .check svg path,
+  .timer-overlay[data-state="settled"] .done-badge .check svg path{
+    animation:check-draw 340ms ease-out 420ms forwards;
+  }
+  @keyframes check-draw{ to{ stroke-dashoffset:0; } }
+  .done-badge .done-text{ font-family:var(--font-mono); font-weight:600; letter-spacing:0.06em; text-transform:uppercase; }
+  .done-badge .done-text .line1{ font-size:34px; display:block; }
+  .done-badge .done-text .line2{ font-size:13px; opacity:0; margin-top:6px; display:block; letter-spacing:0.08em; transition:opacity 260ms ease 620ms; }
+  .timer-overlay[data-state="settled"] .done-badge .done-text .line2{ opacity:0.72; }
+
+  /* settle: shrink the whole done badge down once elapsed time is shown, like a lower-third resolving */
+  .timer-overlay[data-state="settled"] .done-badge{ transform:scale(0.82); transition:opacity 320ms ease, transform 420ms cubic-bezier(.22,1,.36,1); }
+
+  .color-white .done-badge .done-text{ color:var(--white); text-shadow:0 2px 18px rgba(0,0,0,0.55); }
+  .color-black .done-badge .done-text{ color:var(--ink); text-shadow:0 2px 18px rgba(255,255,255,0.6); }
+
+  /* ── footer notes ─────────────────────────────────────────────── */
+  .notes{ max-width:1180px; margin:0 auto; padding:32px 32px 0; border-top:1px solid var(--border); }
+  .notes h3{ font-family:var(--font-mono); font-size:12px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--grey-500); margin:24px 0 10px; }
+  .notes p, .notes li{ font-size:14px; line-height:1.6; color:var(--grey-700); margin:0 0 6px; }
+  .notes ul{ margin:0; padding-left:18px; }
+
+  @media (max-width:720px){
+    .timer-digits{ font-size:56px; }
+    .stage{ height:280px; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="page-head">
+    <p class="eyebrow">// Speed-demo video system — prototype</p>
+    <h1>A cleaner timer, an unmistakable finish, and fast-forward you can't miss.</h1>
+    <p>Today's overlay is a boxed white number and a small "×5" chip — both easy to lose against busy screen recordings. This template drops the box, adds a real completion moment, and makes sped-up footage obvious even from a single freeze-frame. Everything below renders live in this page; toggle the controls to preview every variant before exporting frames.</p>
+  </div>
+
+  <!-- 01 — TRANSPARENT TIMER -->
+  <section class="block" id="timer-section"></section>
+
+  <!-- 02 — DONE TRANSITION -->
+  <section class="block" id="done-section"></section>
+
+  <!-- 03 — FAST-FORWARD -->
+  <section class="block" id="ff-section"></section>
+
+  <div class="notes">
+    <h3>01 — Transparent timer</h3>
+    <ul>
+      <li>Both fonts use tabular figures (<code>font-variant-numeric: tabular-nums</code>) so digits never reflow the layout as seconds tick — this was likely the main reason the old version used a fixed-width white pill.</li>
+      <li>Sometype Mono is the closer brand default (it's already the system's "metrics" typeface), but Manrope Light reads as more editorial for polished hero placements. Ship both; pick per video.</li>
+      <li>Removing the background chip costs legibility on busy footage, so a calibrated soft shadow replaces it — dark shadow under the white variant, light glow under the black variant. It reads as "no background" in a screenshot but stays readable over any b-roll.</li>
+      <li>Export as ProRes 4444 (true alpha) — a plain screen recording won't carry transparency. Fastest path: render this page's timer state at each second as a PNG sequence (headless Chrome, transparent <code>&lt;body&gt;</code>), then <code>ffmpeg -i frame_%04d.png -c:v prores_ks -profile:v 4 -pix_fmt yuva444p10le timer.mov</code>. Say the word and I'll wire up that render script.</li>
+    </ul>
+    <h3>02 — Done transition</h3>
+    <ul>
+      <li>Sequence: digits blur/scale down under a fast orange wipe → a filled orange checkmark draws in → "DONE" pops with a spring ease → after a beat it settles smaller with the elapsed time underneath, so the win registers before the number does.</li>
+      <li>The checkmark is the one deliberate use of orange in the whole overlay — consistent with the one-accent-per-moment rule — which is exactly what makes it read as a clear state change rather than decoration.</li>
+    </ul>
+    <h3>03 — Fast-forward</h3>
+    <ul>
+      <li>Three simultaneous, redundant cues so it survives a scrub, a freeze-frame, or a muted autoplay: a motion-blur ghost trail behind the digits, a jittering scan wobble on the numbers themselves, and a bordered speed chip with looping chevrons instead of a static "×5" label.</li>
+      <li>The chip flashes solid orange for one frame on every speed step-up (2×→5×→10×), so viewers clock the change even mid-scrub.</li>
+    </ul>
+  </div>
+
+<script>
+(function(){
+  const FONT_LABELS = { manrope:'Manrope Light', mono:'Sometype Mono' };
+
+  function seg(options, active, onChange){
+    const wrap = document.createElement('div'); wrap.className = 'seg';
+    options.forEach(opt=>{
+      const b = document.createElement('button');
+      b.textContent = opt.label; b.dataset.value = opt.value;
+      if(opt.value === active) b.classList.add('active');
+      b.addEventListener('click', ()=>{
+        [...wrap.children].forEach(c=>c.classList.remove('active'));
+        b.classList.add('active');
+        onChange(opt.value);
+      });
+      wrap.appendChild(b);
+    });
+    return wrap;
+  }
+
+  function fmt(totalSeconds){
+    totalSeconds = Math.min(totalSeconds, 600);
+    const m = Math.floor(totalSeconds/60), s = Math.floor(totalSeconds%60);
+    return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  }
+
+  /* ---------- 01: timer demo card ---------- */
+  function buildTimerBlock(){
+    const section = document.getElementById('timer-section');
+    const head = document.createElement('div'); head.className = 'block-head';
+    head.innerHTML = '<h2><span class="num">01</span>Transparent timer</h2><p class="desc">No white pill, no fill — just numerals built to survive any backdrop. Two type options, two ink colors.</p>';
+    section.appendChild(head);
+
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(360px, 1fr))';
+    grid.style.gap = '20px';
+    section.appendChild(grid);
+
+    ['manrope','mono'].forEach(font=>{
+      const card = document.createElement('div'); card.className = 'card';
+      const controls = document.createElement('div'); controls.className = 'controls-row';
+      card.appendChild(controls);
+
+      const stage = document.createElement('div'); stage.className = 'stage'; stage.dataset.backdrop = 'alpha';
+      const tag = document.createElement('div'); tag.className='stage-tag'; tag.textContent = FONT_LABELS[font];
+      stage.appendChild(tag);
+
+      const overlay = document.createElement('div'); overlay.className = 'timer-overlay';
+      const digits = document.createElement('div'); digits.className = `timer-digits font-${font} color-white`;
+      digits.textContent = '00:00';
+      overlay.appendChild(digits);
+      stage.appendChild(overlay);
+      card.appendChild(stage);
+
+      let color = 'white', running = true, elapsed = 0;
+      const applyColor = ()=>{ digits.className = `timer-digits font-${font} color-${color}`; };
+
+      controls.appendChild(seg(
+        [{label:'White',value:'white'},{label:'Black',value:'black'}], 'white',
+        v=>{ color=v; applyColor(); }
+      ));
+      controls.appendChild(seg(
+        [{label:'Transparent',value:'alpha'},{label:'Dark video',value:'dark'},{label:'Light video',value:'light'}], 'alpha',
+        v=>{ stage.dataset.backdrop = v; }
+      ));
+      const playBtn = document.createElement('button'); playBtn.className='btn ghost'; playBtn.textContent='Pause';
+      playBtn.addEventListener('click', ()=>{ running = !running; playBtn.textContent = running ? 'Pause' : 'Resume'; });
+      controls.appendChild(playBtn);
+
+      setInterval(()=>{ if(running){ elapsed++; digits.textContent = fmt(elapsed); } }, 1000);
+      grid.appendChild(card);
+    });
+  }
+
+  /* ---------- 02: done transition demo ---------- */
+  function buildDoneBlock(){
+    const section = document.getElementById('done-section');
+    const head = document.createElement('div'); head.className = 'block-head';
+    head.innerHTML = '<h2><span class="num">02</span>The done transition</h2><p class="desc">One continuous move: timer wipes away, checkmark draws, "DONE" lands, then settles to show elapsed time.</p>';
+    section.appendChild(head);
+
+    const card = document.createElement('div'); card.className = 'card';
+    const controls = document.createElement('div'); controls.className = 'controls-row';
+    card.appendChild(controls);
+
+    const stage = document.createElement('div'); stage.className = 'stage'; stage.dataset.backdrop = 'dark';
+    const overlay = document.createElement('div'); overlay.className = 'timer-overlay color-white'; overlay.dataset.state = 'running';
+    const digits = document.createElement('div'); digits.className = 'timer-digits font-mono color-white'; digits.textContent = '00:00';
+    const wipe = document.createElement('div'); wipe.className = 'done-wipe';
+    const badge = document.createElement('div'); badge.className = 'done-badge';
+    badge.innerHTML = `<div class="check"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+      <span class="done-text"><span class="line1">Done</span><span class="line2"></span></span>`;
+    overlay.appendChild(digits); overlay.appendChild(wipe); overlay.appendChild(badge);
+    stage.appendChild(overlay);
+    card.appendChild(stage);
+
+    let elapsed = 0, running = true;
+    const tick = setInterval(()=>{ if(running){ elapsed++; digits.textContent = fmt(elapsed); } }, 1000);
+
+    let color = 'white';
+    controls.appendChild(seg(
+      [{label:'White',value:'white'},{label:'Black',value:'black'}], 'white',
+      v=>{ color=v; overlay.className = `timer-overlay color-${color}`; overlay.dataset.state = overlay.dataset.state; digits.className = `timer-digits font-mono color-${color}`; }
+    ));
+    controls.appendChild(seg(
+      [{label:'Transparent',value:'alpha'},{label:'Dark video',value:'dark'},{label:'Light video',value:'light'}], 'dark',
+      v=>{ stage.dataset.backdrop = v; }
+    ));
+
+    const markDone = document.createElement('button'); markDone.className='btn accent'; markDone.textContent='Mark done';
+    const reset = document.createElement('button'); reset.className='btn ghost'; reset.textContent='Reset';
+    controls.appendChild(markDone); controls.appendChild(reset);
+
+    markDone.addEventListener('click', ()=>{
+      running = false;
+      badge.querySelector('.line2').textContent = 'Done in ' + fmt(elapsed);
+      overlay.dataset.state = 'wiping';
+      setTimeout(()=>{ overlay.dataset.state = 'done'; }, 260);
+      setTimeout(()=>{ overlay.dataset.state = 'settled'; }, 1500);
+    });
+    reset.addEventListener('click', ()=>{
+      elapsed = 0; running = true; digits.textContent = '00:00'; overlay.dataset.state = 'running';
+    });
+
+    section.appendChild(card);
+  }
+
+  /* ---------- 03: fast-forward demo ---------- */
+  function buildFFBlock(){
+    const section = document.getElementById('ff-section');
+    const head = document.createElement('div'); head.className = 'block-head';
+    head.innerHTML = '<h2><span class="num">03</span>Unmistakable fast-forward</h2><p class="desc">Three redundant cues stacked together so speed reads even on a muted, scrubbed, or single-frame view.</p>';
+    section.appendChild(head);
+
+    const card = document.createElement('div'); card.className = 'card';
+    const controls = document.createElement('div'); controls.className = 'controls-row';
+    card.appendChild(controls);
+
+    const stage = document.createElement('div'); stage.className = 'stage'; stage.dataset.backdrop = 'dark';
+    const overlay = document.createElement('div'); overlay.className = 'timer-overlay color-white'; overlay.dataset.ff = '0';
+    const digits = document.createElement('div'); digits.className = 'timer-digits font-mono color-white'; digits.textContent = '00:00';
+    const ghost = document.createElement('div'); ghost.className = 'ghost-trail';
+    ghost.innerHTML = '<span>00:00</span><span>00:00</span><span>00:00</span>';
+    overlay.appendChild(digits); overlay.appendChild(ghost);
+
+    const speedAnchor = document.createElement('div'); speedAnchor.className = 'speed-badge-anchor';
+    const speedBadge = document.createElement('div'); speedBadge.className = 'speed-badge';
+    speedBadge.innerHTML = `<span class="chev-track"><span class="chevs">›› ›› ›› ›› ›› ›› ›› ›› ›› ›› ›› ›› ›› ›› ›› ››</span></span><span class="speed-value">5×</span>`;
+    speedAnchor.appendChild(speedBadge);
+    overlay.appendChild(speedAnchor);
+    overlay.style.position = 'relative';
+    stage.appendChild(overlay);
+    card.appendChild(stage);
+
+    let elapsed = 0, ffOn = false, speedIdx = 0;
+    const speeds = [2,5,10];
+    const speedValueEl = speedBadge.querySelector('.speed-value');
+
+    setInterval(()=>{
+      elapsed += ffOn ? speeds[speedIdx] : 1;
+      digits.textContent = fmt(elapsed);
+      ghost.querySelectorAll('span').forEach(s=> s.textContent = fmt(elapsed));
+    }, 1000);
+
+    controls.appendChild(seg(
+      [{label:'Transparent',value:'alpha'},{label:'Dark video',value:'dark'},{label:'Light video',value:'light'}], 'dark',
+      v=>{ stage.dataset.backdrop = v; }
+    ));
+
+    const ffBtn = document.createElement('button'); ffBtn.className='btn accent'; ffBtn.textContent='Enable fast-forward';
+    ffBtn.addEventListener('click', ()=>{
+      ffOn = !ffOn;
+      overlay.dataset.ff = ffOn ? '1' : '0';
+      ffBtn.textContent = ffOn ? 'Disable fast-forward' : 'Enable fast-forward';
+    });
+    const speedBtn = document.createElement('button'); speedBtn.className='btn ghost'; speedBtn.textContent='Step speed (2×→5×→10×)';
+    speedBtn.addEventListener('click', ()=>{
+      speedIdx = (speedIdx+1) % speeds.length;
+      speedValueEl.textContent = speeds[speedIdx] + '×';
+      speedBadge.classList.remove('flash'); void speedBadge.offsetWidth; speedBadge.classList.add('flash');
+    });
+    controls.appendChild(ffBtn); controls.appendChild(speedBtn);
+
+    section.appendChild(card);
+  }
+
+  buildTimerBlock();
+  buildDoneBlock();
+  buildFFBlock();
+})();
+</script>
+</body>
+</html>

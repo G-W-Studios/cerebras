@@ -1,0 +1,198 @@
+<!-- @dsCard group="Components" viewport="820x560" name="CodeBlock" subtitle="Terminal-style code window · InlineCode" -->
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Sometype+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #F7F5F2;
+    padding: 32px;
+    font-family: "Manrope", -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+  .eyebrow {
+    font-family: "Sometype Mono", ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #807E7D;
+    margin: 0 0 8px;
+  }
+  .inline-demo {
+    font-family: "Manrope", sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1A1A1A;
+    line-height: 1.6;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.12);
+    border-radius: 2px;
+    padding: 16px;
+    margin-top: 24px;
+  }
+</style></head>
+<body>
+  <div id="r"></div>
+  <script type="text/babel">
+    const C = {
+      ink:     "#1A1A1A",
+      orange:  "#F15A29",
+      white:   "#FFFFFF",
+      grey700: "#4D4C4B",
+      grey600: "#5F5E5C",
+      grey400: "#B3B1AF",
+      mono:    '"Sometype Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace',
+    };
+
+    const TOKEN_COLOR = {
+      default: C.white,
+      accent:  C.orange,
+      dim:     C.grey700,
+      comment: C.grey600,
+    };
+
+    const TrafficLights = () => (
+      <svg width="68" height="28" viewBox="0 0 68 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="22" cy="22" r="5" fill="#FFFFFF" />
+        <circle cx="42" cy="22" r="5" fill="#B3B1AF" />
+        <circle cx="62" cy="22" r="5" fill="#4D4C4B" />
+      </svg>
+    );
+
+    const CopyIcon = () => (
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg" style={{display:"block"}}>
+        <rect x="4" y="4" width="8.5" height="8.5" rx="1.5" stroke="currentColor" strokeWidth="1"/>
+        <path d="M1.5 9H1a1 1 0 0 1-1-1V1a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v.5" stroke="currentColor" strokeWidth="1"/>
+      </svg>
+    );
+
+    const CheckIcon = () => (
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg" style={{display:"block"}}>
+        <path d="M2 6.5L5 9.5L11 3.5" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    );
+
+    function CodeBlock({ tokens = [], showLineNumbers = true, copyButton = true, startLine = 1, style }) {
+      const [copied, setCopied] = React.useState(false);
+      const [hoverCopy, setHoverCopy] = React.useState(false);
+
+      const handleCopy = () => {
+        const text = tokens.map(l => l.map(t => t.text).join("")).join("\n");
+        navigator.clipboard?.writeText(text).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        });
+      };
+
+      return (
+        <div style={{ background: C.ink, borderRadius: 12, overflow: "hidden", fontFamily: C.mono, ...style }}>
+          {/* Title bar */}
+          <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-between", paddingRight: 16 }}>
+            <TrafficLights />
+            {copyButton && (
+              <button
+                onClick={handleCopy}
+                onMouseEnter={() => setHoverCopy(true)}
+                onMouseLeave={() => setHoverCopy(false)}
+                style={{
+                  display:"flex", alignItems:"center", gap: 5,
+                  background:"none", border:"none", cursor:"pointer",
+                  color: copied ? C.orange : hoverCopy ? C.grey400 : C.grey700,
+                  fontFamily: C.mono, fontSize: 11,
+                  letterSpacing: "0.06em", textTransform: "uppercase",
+                  padding: "0 0 6px", lineHeight: 1,
+                  transition: "color 120ms ease-out",
+                }}>
+                {copied ? <CheckIcon /> : <CopyIcon />}
+                {copied ? "COPIED" : "COPY"}
+              </button>
+            )}
+          </div>
+
+          {/* Code rows */}
+          <div style={{ padding:"24px 16px", display:"flex", flexDirection:"column", gap: 4, overflowX:"auto" }}>
+            {tokens.map((line, i) => (
+              <div key={i} style={{ display:"flex", alignItems:"center", gap: 20 }}>
+                {showLineNumbers && (
+                  <span style={{
+                    fontSize:14, lineHeight:1.45, color: C.grey700,
+                    textAlign:"right", width:32, flexShrink:0, userSelect:"none",
+                  }}>
+                    {String(startLine + i).padStart(2, "0")}
+                  </span>
+                )}
+                <span style={{ fontSize:14, lineHeight:1.45, color: C.white, flex:1, minWidth:1, whiteSpace:"pre" }}>
+                  {line.length === 0 ? " " : line.map((tok, j) => (
+                    <span key={j} style={{ color: tok.color ?? TOKEN_COLOR[tok.type ?? "default"] ?? C.white }}>
+                      {tok.text}
+                    </span>
+                  ))}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function InlineCode({ children, style }) {
+      return (
+        <code style={{
+          fontFamily: C.mono, fontSize:"0.85em", fontWeight:600,
+          color: C.orange, background:"rgba(241,90,41,0.1)",
+          borderRadius:"2px", padding:"0.1em 0.4em",
+          letterSpacing:"0.02em", ...style,
+        }}>{children}</code>
+      );
+    }
+
+    // Example matching the Figma reference exactly
+    const FIGMA_EXAMPLE = [
+      [{ text:"const " }, { text:"username", type:"accent" }, { text:" = " }, { text:'"figma_dev"', type:"accent" }, { text:";" }],
+      [{ text:"function " }, { text:"initializeSystem", type:"accent" }, { text:"(config) {" }],
+      [{ text:'  console.log(`Starting system for ${' }, { text:"username", type:"accent" }, { text:"}`" }, { text:");" }],
+      [{ text:"  return " }, { text:"true", type:"accent" }, { text:";" }],
+      [{ text:"}" }],
+      [],
+      [{ text:"initializeSystem", type:"accent" }, { text:"();" }],
+    ];
+
+    const PYTHON_EXAMPLE = [
+      [{ text:"import " }, { text:"cerebras", type:"accent" }],
+      [{ text:"from " }, { text:"cerebras.cloud.client", type:"accent" }, { text:" import " }, { text:"Cerebras", type:"accent" }],
+      [],
+      [{ text:"client = " }, { text:"Cerebras", type:"accent" }, { text:"()" }],
+      [{ text:"stream = client.chat.completions." }, { text:"create", type:"accent" }, { text:"(" }],
+      [{ text:'    model=' }, { text:'"llama3.1-8b"', type:"accent" }, { text:"," }],
+      [{ text:"    stream=" }, { text:"True", type:"accent" }, { text:"," }],
+      [{ text:")" }],
+    ];
+
+    ReactDOM.createRoot(document.getElementById("r")).render(
+      <div>
+        <div className="grid">
+          <div>
+            <p className="eyebrow">JavaScript</p>
+            <CodeBlock tokens={FIGMA_EXAMPLE} />
+          </div>
+          <div>
+            <p className="eyebrow">Python</p>
+            <CodeBlock tokens={PYTHON_EXAMPLE} />
+          </div>
+        </div>
+        <div className="inline-demo">
+          Pass a <InlineCode>tokens</InlineCode> array — each line is an array
+          of <InlineCode>{"{ text, type }"}</InlineCode> objects.
+          Use <InlineCode>type: "accent"</InlineCode> to highlight in <InlineCode>#F15A29</InlineCode>.
+        </div>
+      </div>
+    );
+  </script>
+</body></html>

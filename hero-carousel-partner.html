@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cerebras — Partner Hero Carousel</title>
+<style>
+  /* Inline design tokens — the only ones this prototype actually uses.
+     Keeps the file self-contained so it hosts anywhere (Netlify, S3,
+     GitHub Pages) without shipping the whole design-system folder. */
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Sometype+Mono:wght@600&display=swap');
+  :root {
+    --white: #FFFFFF;
+    --ink: #1A1A1A;
+    --paper: #ECE8E4;
+    --font-sans: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: "Sometype Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --fw-regular: 400;
+    --fw-semibold: 600;
+    --fs-label: 13px;
+    --ls-tight: -0.01em;
+    --ls-mono: 0.02em;
+    --radius-xs: 2px;
+    --radius-full: 999px;
+    --space-3: 6px;
+    --space-5: 12px;
+    --space-7: 20px;
+    --space-10: 32px;
+    --dur: 200ms;
+    --dur-fast: 120ms;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+</style>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: #0D0907;
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; overflow: hidden;
+    clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
+
+  /* ─── Section shell ─────────────────────────────────────────── */
+  .hp {
+    --hp-bg: #0D0907;
+    --hp-dwell: 7500ms;
+    background: var(--hp-bg);
+    width: 100%;
+    max-width: 1500px;
+    padding: 96px 48px;
+    /* Contain the exit card's downward travel so it never spawns a
+       transient scrollbar (which would reflow the centered layout). */
+    overflow: clip;
+  }
+  .hp__inner {
+    display: flex;
+    align-items: center;
+    gap: 48px;
+    flex-wrap: wrap;
+  }
+
+  /* ─── Left: connected progress list ─────────────────────────── */
+  .hp__left {
+    flex: 1 1 420px;
+    max-width: 500px;
+    min-width: 320px;
+    /* Fixed box + top-anchored list: the active item grows/shrinks without
+       re-centering the whole block, so nothing bounces mid-transition. */
+    height: 452px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+  .hp-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    /* Gap replaces the old per-item vertical padding so the vertical bar
+       tracks the actual content height, not the padded box height. */
+    gap: var(--space-10);
+  }
+  .hp-item {
+    /* Grid so the bar aligns to hp-content (row 1) only; the actions
+       (row 2) live below the bar's end, not next to it. */
+    display: grid;
+    grid-template-columns: 3px 1fr;
+    grid-template-rows: auto auto; /* explicit rows so `-1` in bar's grid-row span works */
+    column-gap: var(--space-7);
+    cursor: pointer;
+    background: none;
+    border: none;
+    text-align: left;
+    width: 100%;
+    font: inherit;
+    color: inherit;
+  }
+  .hp-bar {
+    position: relative;
+    width: 3px;
+    border-radius: var(--radius-full);
+    background: rgba(255,255,255,0.24);
+    overflow: hidden;
+    grid-column: 1;
+    /* Span both rows: when inactive, row 2 (actions) is 0 tall so the
+       bar effectively only covers row 1. When active, actions expand
+       and the bar naturally extends to cover the buttons too. */
+    grid-row: 1 / -1;
+  }
+  .hp-bar__fill {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 100%;
+    background: var(--white);
+    transform: scaleY(0);
+    transform-origin: top;
+    border-radius: var(--radius-full);
+  }
+  .hp-item.is-active .hp-bar__fill.is-running {
+    transition: transform var(--hp-dwell) linear;
+    transform: scaleY(1);
+  }
+
+  .hp-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    min-width: 0;
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .hp-eyebrow {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-weight: var(--fw-semibold);
+    font-size: var(--fs-label);
+    letter-spacing: var(--ls-mono);
+    text-transform: uppercase;
+    color: var(--white);
+    opacity: 0.55;
+    transition: opacity var(--dur) var(--ease-out);
+  }
+  .hp-item.is-active .hp-eyebrow { opacity: 1; }
+
+  .hp-title {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-weight: var(--fw-regular);
+    color: var(--white);
+    font-size: 28px;
+    line-height: 1.2;
+    letter-spacing: var(--ls-tight);
+    opacity: 0.7;
+    transition: opacity 400ms var(--ease-out);
+  }
+  .hp-item.is-active .hp-title {
+    opacity: 1;
+  }
+
+  .hp-actions {
+    display: flex;
+    gap: var(--space-5);
+    margin-top: var(--space-3);
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 600ms var(--ease-out), opacity 400ms var(--ease-out);
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .hp-item.is-active .hp-actions {
+    max-height: 64px;
+    opacity: 1;
+    transition: max-height 600ms var(--ease-out) 120ms, opacity 500ms var(--ease-out) 180ms;
+  }
+
+  .hp-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 44px;
+    padding: 0 var(--space-7);
+    border-radius: var(--radius-xs);
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-weight: var(--fw-semibold);
+    font-size: var(--fs-label);
+    letter-spacing: var(--ls-mono);
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+    white-space: nowrap;
+  }
+  .hp-btn:active { transform: scale(0.98); }
+  .hp-btn--light { background: var(--white); color: var(--ink); }
+  .hp-btn--light:hover { background: var(--paper); }
+  .hp-btn--glass {
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(3.5px);
+    -webkit-backdrop-filter: blur(3.5px);
+    color: var(--white);
+  }
+  .hp-btn--glass:hover { background: rgba(255,255,255,0.24); }
+
+  /* ─── Right: receding card stack ────────────────────────────── */
+  .hp__right {
+    flex: 1 1 780px;
+    min-width: 480px;
+    display: flex;
+    justify-content: center;
+  }
+  .hp-stack {
+    position: relative;
+    width: 100%;
+    max-width: 774px;
+    aspect-ratio: 734 / 520;
+    perspective: 1400px;
+    perspective-origin: 50% 0%;
+  }
+  .hp-card {
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    background: #1a1a1a;
+    transform-origin: top center;
+    transform-style: preserve-3d;
+    transition: transform 600ms cubic-bezier(0.33, 1, 0.68, 1), box-shadow 600ms cubic-bezier(0.33, 1, 0.68, 1);
+    will-change: transform;
+  }
+  .hp-card img.hp-card__bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .hp-card__logos {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 68%;
+    max-width: 340px;
+    height: auto;
+    display: block;
+    pointer-events: none;
+  }
+  .hp-card[data-depth="0"] {
+    z-index: 3;
+    transform: translateY(0) scale(1);
+    box-shadow: 0 40px 60px rgba(0,0,0,0.45);
+  }
+  .hp-card[data-depth="1"] {
+    z-index: 2;
+    transform: translateY(-30px) scale(0.9);
+    box-shadow: none;
+    cursor: default;
+  }
+  .hp-card[data-depth="2"] {
+    z-index: 1;
+    transform: translateY(-60px) scale(0.81);
+    box-shadow: none;
+    cursor: default;
+  }
+  .hp-card[data-depth="0"] .hp-card__logos { opacity: 1; }
+
+  /* Departing front card: tips forward around its bottom edge and falls away downward */
+  .hp-card.is-exiting {
+    z-index: 4;
+    transform-origin: center bottom;
+    /* Front card stays fully opaque as it tips forward; it only vanishes
+       at the very end when it's already off-screen / maximally angled. */
+    /* Front card stays fully opaque as it tips forward; it only vanishes
+       at the very end when it's already off-screen / maximally angled. */
+    animation: hp-card-fall 600ms cubic-bezier(0.32, 0, 0.67, 0) forwards,
+               hp-card-fade 600ms steps(1, end) forwards;
+  }
+  @keyframes hp-card-fall {
+    from { transform: translateY(0) rotateX(0deg) scale(1); }
+    to   { transform: translateY(60%) rotateX(-82deg) scale(0.86); }
+  }
+  @keyframes hp-card-fade {
+    0%, 96% { opacity: 1; }
+    100%    { opacity: 0; }
+  }
+
+  /* Clone that fills the back slot while the real card falls away, so the
+     deck always reads as full and the back card fades in CONCURRENTLY
+     (identical duration/curve so both animations finish together). */
+  .hp-card--clone {
+    animation: hp-card-enter 600ms cubic-bezier(0.32, 0, 0.67, 0) forwards;
+  }
+  @keyframes hp-card-enter {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  /* ─── Responsive ────────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    .hp { padding: 64px 24px; }
+    .hp__inner { flex-direction: column; align-items: stretch; }
+    .hp__left, .hp__right {
+      flex: 1 1 auto;
+      width: 100%;
+      max-width: none;
+      min-width: 0;
+    }
+    .hp__left { height: auto; justify-content: flex-start; }
+    .hp__right { order: -1; margin-bottom: var(--space-10); justify-content: stretch; }
+    .hp-stack { max-width: none; width: 100%; }
+  }
+
+  /* ─── Reduced motion ────────────────────────────────────────── */
+  @media (prefers-reduced-motion: reduce) {
+    .hp-card { transition: opacity 300ms linear; }
+    .hp-card[data-depth="0"] { transform: none; opacity: 1; }
+    .hp-card[data-depth="1"], .hp-card[data-depth="2"] { transform: none; opacity: 0; }
+    .hp-card.is-exiting { animation: none; opacity: 0; }
+    .hp-bar__fill.is-running { transition: none !important; transform: scaleY(1) !important; }
+    .hp-title, .hp-actions, .hp-eyebrow { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<section class="hp" aria-roledescription="carousel" aria-label="Cerebras partner announcements">
+  <div class="hp__inner">
+
+    <div class="hp__left">
+      <ul class="hp-list" id="hpList">
+        <li class="hp-item" data-index="0">
+          <span class="hp-bar"><span class="hp-bar__fill"></span></span>
+          <div class="hp-content">
+            <p class="hp-eyebrow">Lorem ipsum</p>
+            <p class="hp-title">New partner with…..</p>
+          </div>
+          <div class="hp-actions">
+            <a class="hp-btn hp-btn--light" href="#">Learn more</a>
+            <a class="hp-btn hp-btn--glass" href="#">Read the whitepaper</a>
+          </div>
+        </li>
+        <li class="hp-item" data-index="1">
+          <span class="hp-bar"><span class="hp-bar__fill"></span></span>
+          <div class="hp-content">
+            <p class="hp-eyebrow">Lorem ipsum</p>
+            <p class="hp-title">The fastest inference is now multimodal</p>
+          </div>
+          <div class="hp-actions">
+            <a class="hp-btn hp-btn--light" href="#">Learn more</a>
+            <a class="hp-btn hp-btn--glass" href="#">Read the whitepaper</a>
+          </div>
+        </li>
+        <li class="hp-item" data-index="2">
+          <span class="hp-bar"><span class="hp-bar__fill"></span></span>
+          <div class="hp-content">
+            <p class="hp-eyebrow">Lorem ipsum</p>
+            <p class="hp-title">The Economics of AI Reasoning</p>
+          </div>
+          <div class="hp-actions">
+            <a class="hp-btn hp-btn--light" href="#">Learn more</a>
+            <a class="hp-btn hp-btn--glass" href="#">Read the whitepaper</a>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="hp__right">
+      <div class="hp-stack" id="hpStack">
+        <button class="hp-card" data-card="0" aria-label="Card 1 of 3">
+          <img class="hp-card__bg" src="assets/hero-partner/card-1-orange-bg.jpg" alt="">
+          <img class="hp-card__logos" src="assets/hero-partner/card-1-logos.png" alt="Cerebras × Kimi">
+        </button>
+        <button class="hp-card" data-card="1" aria-label="Card 2 of 3">
+          <img class="hp-card__bg" src="assets/hero-partner/card-2-gray-bg.jpg" alt="">
+        </button>
+        <button class="hp-card" data-card="2" aria-label="Card 3 of 3">
+          <img class="hp-card__bg" src="assets/hero-partner/card-3-blue-bg.jpg" alt="">
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="sr-only" role="status" aria-live="polite" id="hpLiveRegion"></div>
+</section>
+
+<script>
+(function () {
+  var COUNT = 3;
+  var DWELL = 7500;
+  var list = document.getElementById('hpList');
+  var items = Array.prototype.slice.call(list.querySelectorAll('.hp-item'));
+  var stack = document.getElementById('hpStack');
+  var cards = Array.prototype.slice.call(stack.querySelectorAll('.hp-card'));
+  var live = document.getElementById('hpLiveRegion');
+
+  var active = 0;
+  var timer = null;
+
+  function render() {
+    items.forEach(function (item, i) {
+      var isActive = i === active;
+      item.classList.toggle('is-active', isActive);
+      var fill = item.querySelector('.hp-bar__fill');
+      fill.classList.remove('is-running');
+      // force reflow so the transition restarts cleanly
+      void fill.offsetWidth;
+      fill.style.transform = isActive ? '' : 'scaleY(0)';
+      if (isActive) {
+        requestAnimationFrame(function () {
+          fill.classList.add('is-running');
+        });
+      }
+    });
+
+    cards.forEach(function (card, i) {
+      var depth = (i - active + COUNT) % COUNT;
+      card.setAttribute('data-depth', depth);
+      card.setAttribute('aria-hidden', depth === 0 ? 'false' : 'true');
+      card.tabIndex = depth === 0 ? 0 : -1;
+    });
+
+    live.textContent = items[active].querySelector('.hp-title').textContent;
+  }
+
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function playExit(card) {
+    if (reduceMotion) return;
+    var stackEl = card.parentNode;
+
+    // Clear any leftover clone from a rapid prior advance.
+    var stale = stackEl.querySelector('.hp-card--clone');
+    if (stale) stale.remove();
+
+    // A clone fills the back slot (render() already assigned this card depth 2)
+    // and fades in at the same time the real card falls away — so the deck
+    // stays full and the back layer eases in instead of popping at the end.
+    var clone = card.cloneNode(true);
+    clone.classList.remove('is-exiting');
+    clone.classList.add('hp-card--clone');
+    clone.removeAttribute('id');
+    clone.setAttribute('aria-hidden', 'true');
+    clone.tabIndex = -1;
+    clone.style.pointerEvents = 'none';
+    stackEl.appendChild(clone);
+
+    // Force the clone's animation to start on the SAME frame as the exit
+    // (append + is-exiting must both be in the same paint cycle so the
+    // fade-in and the fall are visually simultaneous).
+    card.classList.add('is-exiting');
+
+    var cleaned = false;
+    function cleanup() {
+      if (cleaned) return;
+      cleaned = true;
+      card.removeEventListener('animationend', cleanup);
+      // Snap silently to its new resting slot (already assigned by render())
+      card.style.transition = 'none';
+      card.classList.remove('is-exiting');
+      void card.offsetWidth; // flush the transition-less layout
+      card.style.transition = '';
+      if (clone.parentNode) clone.remove();
+    }
+    card.addEventListener('animationend', cleanup);
+    // Fallback in case animationend is missed (interrupted/backgrounded).
+    setTimeout(cleanup, 700);
+  }
+
+  function goTo(index) {
+    var target = ((index % COUNT) + COUNT) % COUNT;
+    if (target === active) { restartTimer(); return; }
+    // The card sitting at the front (its index === current active) falls away.
+    var outgoing = cards[active];
+    active = target;
+    render();
+    playExit(outgoing);
+    restartTimer();
+  }
+
+  function next() { goTo(active + 1); }
+  function prev() { goTo(active - 1); }
+
+  function restartTimer() {
+    if (timer) clearTimeout(timer);
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    timer = setTimeout(next, DWELL);
+  }
+
+  items.forEach(function (item, i) {
+    item.addEventListener('click', function () { goTo(i); });
+  });
+
+  cards.forEach(function (card, i) {
+    card.addEventListener('click', function () {
+      if (parseInt(card.getAttribute('data-depth'), 10) === 0) {
+        next();
+      } else {
+        goTo(i);
+      }
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight') next();
+    if (e.key === 'ArrowLeft') prev();
+  });
+
+  render();
+  restartTimer();
+})();
+
+// ─── Button text-scramble on hover (matches hero-carousel-g.html) ──
+(function () {
+  var GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789=}][<>_-+/\\|@#';
+  var SCRAMBLE_DURATION = 600; // ms
+  var FRAME_MS = 28;           // ~36fps
+
+  function scramble(el) {
+    var target   = el.querySelector('.btn-label') || el;
+    var original = el.dataset.scramble;
+    if (!original) return;
+    if (el._scrambleTimer) clearInterval(el._scrambleTimer);
+
+    var len    = original.length;
+    var frames = Math.round(SCRAMBLE_DURATION / FRAME_MS);
+    var tick   = 0;
+
+    el._scrambleTimer = setInterval(function () {
+      var progress = tick / frames;
+      var out = '';
+      for (var i = 0; i < len; i++) {
+        if (original[i] === ' ') { out += ' '; continue; }
+        var lockAt = i / len;
+        out += progress >= lockAt
+          ? original[i]
+          : GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+      }
+      target.textContent = out;
+
+      tick++;
+      if (tick > frames) {
+        clearInterval(el._scrambleTimer);
+        target.textContent = original;
+      }
+    }, FRAME_MS);
+  }
+
+  document.querySelectorAll('.hp-btn').forEach(function (btn) {
+    btn.dataset.scramble = btn.textContent.trim();
+    btn.addEventListener('mouseenter', function () { scramble(btn); });
+  });
+})();
+</script>
+
+</body>
+</html>
