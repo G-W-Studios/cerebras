@@ -143,6 +143,14 @@ The marketing/event/social layer (from `socials.fig`) runs a deliberately
 - `navigation/` — Navigation (site header), Footer
 - `brand/` — Logo, Illustration
 - `social/` — SocialPost (campaign / social-ad surface), DisplayAd (IAB web banners)
+- `charts/` — the graph library (BarChart, HorizontalBarChart, PieChart, LineChart, ScatterChart, StackedColumnChart, GanttChart). Themed via
+  `tokens/charts.css` (`dark-gradient` / `dark-orange` / `light`, set with a
+  `theme` prop). Their stories carry `title: 'Charts/<Name>'`, grouping all
+  seven under one "Charts" folder in the Storybook sidebar instead of
+  scattering them alphabetically among the other components — give a new
+  chart story the same `title` pattern. See the "Chart library" section
+  below (both the per-chart rundown and the rules) before adding a new
+  chart type or story.
 
 **UI kit** (`ui_kits/website/`)
 - `index.html` — interactive Cerebras marketing homepage recreation
@@ -156,6 +164,119 @@ them on `window.CerebrasDesignSystem_0bbfb2`. In an HTML page, link `styles.css`
 `_ds_bundle.js`, then `const { Button } = window.CerebrasDesignSystem_0bbfb2`.
 
 ---
+
+## Chart library
+
+### Chart types at a glance
+
+- **BarChart** — grouped vertical bars, Cerebras vs. a competitor per
+  category (`competitorValue` optional for a single-series chart). Per-
+  category `logo` (an image URL, or a real `File`/`Blob` straight from an
+  `<input type="file">`) renders above the category label; the legend
+  auto-hides once any category has a logo, since the logos already
+  identify each bar. Per-category `cerebrasFill`/`competitorFill`
+  overrides.
+- **HorizontalBarChart** — ranked-list format. Per-row `fill` override; see
+  its `Monochrome`/`MultiLevel` stories for the same data shape restyled
+  two different ways.
+- **PieChart** — generalized N-segment donut. The first (or
+  `cerebras`-flagged) segment is always flat orange; the rest cycle
+  through the multi-level ramp (`--graph-level-1/2/3`).
+- **LineChart** — trend-over-size format, any number of series/points. The
+  draw-in animation runs on the Web Animations API, not a CSS transition —
+  see the gotcha below before touching it. `variant="area"` fills the band
+  between each series and the one before it (lowest series to baseline)
+  for a growth/forecast-comparison "wedge" chart — only reads correctly
+  when every series shares the same x values and is given lowest-to-
+  highest with no crossing.
+- **ScatterChart** — x/y scatter ("Intelligence vs. Speed" format). Entrance
+  animation is two-phase: dots pop in first with a randomized (shuffled)
+  stagger, then labels sweep in left-to-right by x-position, sliding out
+  from inside their own dot rather than just fading in place.
+- **StackedColumnChart** — cost/composition breakdown. Segment colors are
+  an auto-generated N-step ramp (light→dark) instead of a fixed palette;
+  columns default to the orange family and opt into the neutral ramp via
+  `competitor: true`.
+- **GanttChart** — cascading process-timeline format (phase `groups`, each
+  with stacked `rows` of non-overlapping `tasks`). No Figma spec exists for
+  this one — it was translated from a reference screenshot the same way
+  `StackedColumnChart` was: the reference's own per-phase rainbow hues
+  became a single orange ramp (lighter for earlier phases, full-strength
+  for the last), with an optional neutral `tone: "meta"` chip for a
+  bookend marker that isn't itself a working phase. A task's label spills
+  outside its bar toward whichever side has more room when it's too
+  narrow to fit inline.
+
+### Rules
+
+The Figma benchmark charts are reference *content*, not a spec to hardcode
+against. A client's real data won't match the row/bar/category count in
+whatever mock we built the component from — a chart tuned to exactly 3
+categories or 2 series is a demo, not a component. Every chart type must:
+
+- Accept an arbitrary-length `categories`/`rows`/`items` array — never assume
+  a fixed count. Test each new chart type with both 2 items and 15+ before
+  calling it done (see `BarChart`'s `ManyCategories` story for the pattern).
+- Size elements (bar width, row height, etc.) relative to how many items
+  there are, with a max cap so a 2-item chart doesn't look absurd, and a
+  floor + horizontal-scroll fallback so a 30-item chart doesn't squeeze into
+  illegibility. Never a value hardcoded to "looks right for the demo data."
+- Make series optional where the design allows it (e.g. `BarChart`'s
+  `competitorValue` is optional per category — omit it everywhere for an
+  all-Cerebras, single-series chart). Don't force a shape the client's data
+  doesn't have.
+- Treat exact Figma pixel values (padding, radius, gaps) as the thing to
+  match — but the *dataset* in that Figma frame as one example among many,
+  not a schema.
+- Never hardcode which series gets which color. The same chart type can be
+  monochrome (every bar the same color), two-tone (Cerebras vs. a single
+  competitor fill — the default), or a distinct color per bar (the
+  multi-level ramp tokens `--graph-level-1/2/3`, or any per-item CSS color) —
+  the caller's dataset decides, not the component. Give every chart type a
+  per-item `fill`-style override (see `BarChart`'s `cerebrasFill`/
+  `competitorFill` and `HorizontalBarChart`'s `fill`) that falls back to the
+  theme default when omitted, so the default two-tone behavior still works
+  with zero configuration. See `HorizontalBarChart`'s `Monochrome` and
+  `MultiLevel` stories for the pattern — both came from the same Figma
+  frame as the default two-tone chart, just a different color choice on the
+  same data shape.
+- Never size a stacked/proportional element with CSS `flex-grow` set
+  directly from a raw data value (e.g. `flex: ${dollarValue} 0 0` for a
+  0.07/0.09/0.2-scale value). Verified this hits a real browser sizing
+  quirk — segments render at roughly `value ×` their intended height
+  instead of being normalized against their siblings' sum, leaving the
+  shortfall as blank space stacked at the container's end (in
+  `StackedColumnChart`, this showed up as bars not reaching the baseline).
+  Compute an explicit pixel size (`(value / total) * containerSize`) and
+  set `height`/`width` directly instead — see `StackedColumnChart`'s
+  segment sizing for the pattern.
+- Never set an SVG element's `fill`/`stroke` attribute to one of the
+  gradient tokens (`--graph-cerebras-fill`, `--graph-competitor-fill`, and
+  their `-h` variants) — they hold CSS `linear-gradient(...)` values,
+  valid for an HTML element's `background` (how `BarChart`/
+  `StackedColumnChart` use them) but not for SVG paint, which silently
+  drops to black on an unparseable value. `LineChart`'s `variant="area"`
+  hit this; it uses flat colors (`var(--orange)` / `--graph-line-
+  secondary`) with `fillOpacity` instead for its area fills.
+- Never animate SVG `stroke-dashoffset` (a line-draw-in effect) with a
+  plain CSS `transition` on a React inline style. Verified with
+  `element.getAnimations()` that the browser can silently never register
+  the transition at all — the value jumps straight from its start to its
+  end state with nothing animating in between, even across a double-rAF
+  gap meant to guarantee an intervening painted frame. Use the Web
+  Animations API instead (`element.animate([...], {...})`) — it's
+  imperative and starts deterministically without needing the browser to
+  detect a value change across a paint boundary. See `LineChart`'s draw-in
+  for the pattern. Plain CSS transitions remain fine for opacity/transform
+  (every other chart's entrance animation uses them without issue) — this
+  gotcha is specific to `stroke-dashoffset`.
+- Never give a per-item logo/icon its own distinct brand-lookup color
+  (each competitor's real-world logo color, a generated rainbow, etc.) —
+  even just for a small avatar/monogram next to a bar. `BarChart`'s
+  `WithLogos` story did this (a different hex per competitor) and it
+  quietly broke the same two-tone rule above: Cerebras is the one loud
+  color, everything else is the *same* neutral, full stop, with no
+  exception for decorative elements that aren't the bar itself.
 
 ## Caveats
 

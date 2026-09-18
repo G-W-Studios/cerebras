@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Partner Logo Marquee</title>
+<style>
+  :root {
+    --card-w: 145.535px;
+    --card-h: 110.971px;
+    --card-gap: 21.83px;
+    --card-radius: 5.458px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: #0a0a0a;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  .marquee-section {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    padding: 90px 0;
+    background-color: #1a0f08;
+  }
+
+  /* Matches the source design's exact crop: the source asset is placed
+     oversized and offset within the clipped container rather than a
+     simple background-size:cover, which picks the wrong crop/zoom. */
+  .marquee-bg {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .marquee-bg img {
+    position: absolute;
+    left: -216.87%;
+    top: -64.65%;
+    width: 465.4%;
+    height: 284.83%;
+    max-width: none;
+  }
+
+  .marquee-rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--card-gap);
+    position: relative;
+    z-index: 1;
+  }
+
+  .marquee-track-wrap {
+    overflow: hidden;
+    width: 100%;
+  }
+
+  .marquee-track {
+    display: flex;
+    gap: var(--card-gap);
+    width: max-content;
+    will-change: transform;
+  }
+
+  .marquee-track--right {
+    animation: scroll-right 34s linear infinite;
+  }
+
+  .marquee-track--left {
+    animation: scroll-left 34s linear infinite;
+  }
+
+  @keyframes scroll-left {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+
+  @keyframes scroll-right {
+    from { transform: translateX(-50%); }
+    to   { transform: translateX(0); }
+  }
+
+  .logo-card {
+    flex-shrink: 0;
+    width: var(--card-w);
+    height: var(--card-h);
+    border-radius: var(--card-radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .logo-card img {
+    max-width: 60%;
+    max-height: 50%;
+    object-fit: contain;
+    display: block;
+  }
+
+  .logo-card.bg-white  { background: #ffffff; }
+  .logo-card.bg-teal   { background: #014141; }
+  .logo-card.bg-blue   { background: #0140fb; }
+  .logo-card.bg-orange { background: #f15a29; }
+  .logo-card.bg-ibmblue{ background: #2477c1; }
+  .logo-card.bg-dark   { background: #2a2a2a; }
+
+  .logo-card.icon-ibm img { max-width: 53%; max-height: 71%; }
+  .logo-card.icon-databricks img { max-width: 36%; }
+  .logo-card.icon-openai img { max-width: 62%; }
+  .logo-card.icon-g42 img { max-width: 46%; }
+  .logo-card.icon-mayo img { max-width: 41%; }
+
+  /* alphasense.png is a huge canvas with the lockup centered in a small
+     fraction of it — scale + offset to crop into just the logo, matching
+     the source design's object-cover crop instead of shrinking the whole canvas. */
+  .logo-card.icon-alphasense {
+    justify-content: flex-start;
+    align-items: flex-start;
+  }
+  .logo-card.icon-alphasense img {
+    position: absolute;
+    left: -35%;
+    top: -4.92%;
+    width: 170.03%;
+    height: 111.48%;
+    max-width: none;
+    max-height: none;
+    object-fit: cover;
+  }
+
+  @media (max-width: 640px) {
+    :root {
+      --card-w: 108px;
+      --card-h: 82px;
+      --card-gap: 14px;
+    }
+    .marquee-section { padding: 56px 0; }
+  }
+</style>
+</head>
+<body>
+
+<section class="marquee-section">
+  <div class="marquee-bg">
+    <img src="assets/images/partner-logos/bg-container.png" alt="" />
+  </div>
+  <div class="marquee-rows">
+
+    <!-- Top row: scrolls right -->
+    <div class="marquee-track-wrap">
+      <div class="marquee-track marquee-track--right" id="rowTop">
+        <!-- set A -->
+        <div class="logo-card bg-white icon-mayo"><img src="assets/images/partner-logos/mayo-clinic.png" alt="Mayo Clinic" /></div>
+        <div class="logo-card bg-ibmblue icon-ibm"><img src="assets/images/partner-logos/ibm-logo.svg" alt="IBM" /></div>
+        <div class="logo-card bg-white"><img src="assets/images/partner-logos/meta.png" alt="Meta" /></div>
+        <div class="logo-card bg-dark icon-openai"><img src="assets/images/partner-logos/openai-dots.svg" alt="OpenAI" /></div>
+        <div class="logo-card bg-white"><img src="assets/images/partner-logos/gsk.png" alt="GSK" /></div>
+        <!-- set B (duplicate for seamless loop) -->
+        <div class="logo-card bg-white icon-mayo"><img src="assets/images/partner-logos/mayo-clinic.png" alt="Mayo Clinic" /></div>
+        <div class="logo-card bg-ibmblue icon-ibm"><img src="assets/images/partner-logos/ibm-logo.svg" alt="IBM" /></div>
+        <div class="logo-card bg-white"><img src="assets/images/partner-logos/meta.png" alt="Meta" /></div>
+        <div class="logo-card bg-dark icon-openai"><img src="assets/images/partner-logos/openai-dots.svg" alt="OpenAI" /></div>
+        <div class="logo-card bg-white"><img src="assets/images/partner-logos/gsk.png" alt="GSK" /></div>
+      </div>
+    </div>
+
+    <!-- Bottom row: scrolls left -->
+    <div class="marquee-track-wrap">
+      <div class="marquee-track marquee-track--left" id="rowBottom">
+        <!-- set A -->
+        <div class="logo-card bg-teal icon-g42"><img src="assets/images/partner-logos/g42.svg" alt="G42" /></div>
+        <div class="logo-card bg-white"><img src="assets/images/partner-logos/notion-logo.svg" alt="Notion" /></div>
+        <div class="logo-card bg-blue icon-alphasense"><img src="assets/images/partner-logos/alphasense.png" alt="AlphaSense" /></div>
+        <div class="logo-card bg-white"><img src="assets/images/partner-logos/partner-m.png" alt="Partner" /></div>
+        <div class="logo-card bg-orange icon-databricks"><img src="assets/images/partner-logos/databricks-mark.svg" alt="Databricks" /></div>
+        <!-- set B (duplicate for seamless loop) -->
+        <div class="logo-card bg-teal icon-g42"><img src="assets/images/partner-logos/g42.svg" alt="G42" /></div>
+        <div class="logo-card bg-white"><img src="assets/images/partner-logos/notion-logo.svg" alt="Notion" /></div>
+        <div class="logo-card bg-blue icon-alphasense"><img src="assets/images/partner-logos/alphasense.png" alt="AlphaSense" /></div>
+        <div class="logo-card bg-white"><img src="assets/images/partner-logos/partner-m.png" alt="Partner" /></div>
+        <div class="logo-card bg-orange icon-databricks"><img src="assets/images/partner-logos/databricks-mark.svg" alt="Databricks" /></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+</body>
+</html>

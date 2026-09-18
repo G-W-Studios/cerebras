@@ -1011,13 +1011,14 @@ The orange = Cerebras rule is absolute and non-negotiable. Every other series us
 | Series | Color | Token |
 |---|---|---|
 | Cerebras | `#F15A29` | `{colors.orange}` |
-| GPU / Primary competitor | `#90D729` (green, small accent) or `#4D4C4B` | `{colors.green}` / `{colors.grey-700}` |
+| GPU / Primary competitor (light card) | `#90D729` (green, small accent) or `#4D4C4B` | `{colors.green}` / `{colors.grey-700}` |
+| GPU / Primary competitor (dark card) | `#6A4A3A` flat, or a brown→transparent gradient on bars (direction matches the bar's axis — see below) | `{colors.brown-competitor}` / `{colors.gradient-bar-competitor}` (vertical) / `{colors.gradient-bar-competitor-h}` (horizontal) |
 | Competitor 2 | `#1C3B3E` | `{colors.teal-900}` |
 | Competitor 3 | `#B3B1AF` | `{colors.grey-400}` |
 | Competitor 4 | `#E6E6E6` | `{colors.grey-200}` |
 | Reference / target line | dashed, `{colors.grey-400}` | — |
 
-On dark card surfaces, competitor bars use `{colors.grey-700}` and `{colors.grey-500}` respectively — the neutral ramp shifts warmer on ink.
+On dark card surfaces, competitor bars and swatches use the warm brown above — **not** the grey ramp. Grey is a light-card-only competitor color; on ink, competitor series read as a muted brown so they still recede behind the orange Cerebras bar without going cold/grey against the near-black background. The grey ramp (`{colors.grey-700}` / `{colors.grey-500}`) stays in use on dark cards only for structural chrome — baseline hairlines, dividers, secondary label text — never for a competitor data series.
 
 ### Chart types in use
 
@@ -1028,6 +1029,8 @@ On dark card surfaces, competitor bars use `{colors.grey-700}` and `{colors.grey
 **Grouped bar chart (multi-series)** — for benchmark suites (MATH, MMLU-Pro, GPQA, CRUX). Cerebras bar is orange; each competitor gets a distinct grey from the neutral ramp. A dashed horizontal reference line can mark the target score.
 
 **Donut / pie chart** — used sparingly. Cerebras slice is orange; other slices use the neutral ramp and accent colors (`{colors.teal-900}`, `{colors.grey-400}`, `{colors.grey-200}`). Center of donut is left empty (no total label).
+
+**Ranked comparison table** — for a small set of scenario rows compared across exactly two columns (e.g. GPU vs. Cerebras latency by task type). Light card. A tapered accent shape (orange, wide at the header end narrowing to a point) runs down the left edge next to the row labels, labelled with the dimension being ranked (e.g. "QUALITY") in white Sometype Mono — it communicates the rows are ordered along that axis without needing a numeric scale. Row labels use Manrope (same as x-axis category labels elsewhere), left-aligned; the two value columns are right of that, in Sometype Mono SemiBold, one per competitor — the non-Cerebras column in `{colors.grey-500}`, the Cerebras column in `{colors.orange}`. Column headers sit above the two value columns only (not above the row-label column); use the actual Cerebras logomark/wordmark asset (`Cerebras Design System 2/assets/logo/`) for the Cerebras header, never a text substitute. Hairline row dividers (`{colors.border}`) separate every row, including under the header.
 
 **Comparison bar (inline)** — the WSE-3 vs GPU side-by-side strip. Vertical label in Sometype Mono uppercase (TOKENS/SECOND, ON-CHIP SRAM, TRANSISTOR COUNT). Orange filled bar for WSE-3 value; grey/charcoal bar for GPU. Values in Sometype Mono SemiBold. Used in feature bands and product pages, not standalone chart cards.
 
@@ -1133,13 +1136,24 @@ This is the authoritative specification for building graphs. Build all new graph
 --paper-50: #F7F5F2     /* light card background, donut hole */
 --orange: #F15A29       /* Cerebras primary */
 --orange-400: #FE9E38   /* lighter orange for gradients, hover labels */
---grey-700: #4D4C4B     /* competitor bars, separators */
+--grey-700: #4D4C4B     /* competitor bars on LIGHT cards, separators/dividers on any card */
 --grey-500: #807E7D     /* secondary labels, axis text */
+--brown-competitor: #6A4A3A                                                     /* competitor swatches/fills on DARK cards */
+--gradient-bar-competitor: linear-gradient(180deg, #694939 32.79%, rgba(105,73,57,0) 100%)   /* competitor bars on DARK cards — VERTICAL bars only */
+--gradient-bar-competitor-h: linear-gradient(270deg, #694939 32.79%, rgba(105,73,57,0) 100%) /* competitor bars on DARK cards — HORIZONTAL bars only */
 --font-sans: "Manrope"  /* titles only */
 --font-mono: "Sometype Mono"  /* all in-chart text */
 --gradient-bar: linear-gradient(180deg, #FE9E38 0%, #F15A29 95.19%)   /* vertical Cerebras bar */
 --gradient-bar-h: linear-gradient(90deg, #F15A29 4.8%, #FE9E38 100%)  /* horizontal Cerebras bar */
 ```
+
+**Dark vs. light card competitor color — pick by card, not by chart type:** any bar/swatch representing a non-Cerebras series on a `graph-card.dark` uses `--gradient-bar-competitor`/`--gradient-bar-competitor-h` (bars) or `--brown-competitor` (small flat swatches, e.g. legend dots). The same series on a `graph-card.light` keeps using `--grey-700`. Never use `--grey-700`/`--grey-500` for a competitor bar fill on a dark card — reserve those two tokens on dark cards for structural chrome (baseline hairlines, dividers, secondary text).
+
+**Gradient direction must match the bar's growth axis.** The competitor gradient always fades from solid color to fully transparent — never pick the vertical token for a horizontal bar or vice versa, the fade will point the wrong way:
+- **Vertical bars** (grow bottom→top, baseline at the bottom): use `--gradient-bar-competitor` (`180deg`). Solid color sits at the top (the tip, away from the baseline); it fades to transparent toward the bottom (the baseline — where the bar begins).
+- **Horizontal bars** (grow left→right, anchored at the left next to the row label): use `--gradient-bar-competitor-h` (`270deg`). Solid color sits at the right (the tip); it fades to transparent toward the left (where the bar begins).
+
+The rule in both cases: **the faded/transparent end — which reads as the darker tone against the near-black card — always sits at the beginning of the bar** (its baseline/anchor point), and the solid, more-visible brown sits at the tip. Don't reuse one gradient for the other orientation — rotate the direction, keep the same color stops.
 
 #### Tab shell structure
 
@@ -1443,6 +1457,80 @@ setTimeout(() => {
   panel.querySelectorAll('.donut-segment').forEach(seg => seg.setAttribute('stroke-dasharray', seg.dataset.origDash));
   panel.querySelector('.donut-wrap')?.classList.add('visible');
 }, 150);
+```
+
+#### Ranked comparison table — HTML template
+
+Used for: a small set of scenario rows compared across exactly two columns, ranked along an implicit axis (e.g. GPU vs. Cerebras latency by quality tier).
+
+```html
+<div class="graph-panel" id="gN">
+  <div class="graph-card light">
+
+    <h2 class="graph-title">Title of the Chart</h2>
+
+    <div class="ct-header-row">
+      <div class="ct-header-spacer"></div>
+      <div class="ct-header-col">GPU</div>
+      <div class="ct-header-col cerebras">
+        <img src="Cerebras Design System 2/assets/logo/cerebras-logomark.svg" alt="Cerebras">
+      </div>
+    </div>
+
+    <div class="ct-body-row">
+      <div class="ct-quality-col">
+        <div class="ct-quality-shape">
+          <span class="ct-quality-label">Quality</span>
+        </div>
+      </div>
+      <div class="ct-rows-col">
+        <div class="ct-data-row">
+          <span class="ct-row-label">Scenario One</span>
+          <span class="ct-value gpu">~10m</span>
+          <span class="ct-value cerebras">~1m</span>
+        </div>
+        <!-- repeat .ct-data-row for each scenario, ordered along the ranked axis -->
+      </div>
+    </div>
+
+  </div>
+</div>
+```
+
+**Reuse the logomark asset via `<img>`, never retype or fake the mark.** Both logo SVGs under `Cerebras Design System 2/assets/logo/` declare `xmlns="http://www.w3.org/2000/svg"` and a `color` attribute so they render correctly when loaded standalone as an `<img src>` (not just when pasted inline into HTML) — if you ever add another exported brand asset, check it has both or it will silently fail as a broken image when referenced by URL.
+
+Required CSS per chart (replace `gN`):
+```css
+#gN .ct-header-row { display: flex; align-items: center; margin-left: 88px; padding-bottom: 14px; border-bottom: 1px solid rgba(26,26,26,0.12); }
+#gN .ct-header-spacer { flex: 1; }
+#gN .ct-header-col { width: 104px; flex-shrink: 0; display: flex; justify-content: center; align-items: center;
+  font-family: var(--font-mono); font-weight: 600; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--grey-500); }
+#gN .ct-header-col.cerebras { width: 128px; }
+#gN .ct-header-col.cerebras img { height: 20px; width: auto; display: block; }
+#gN .ct-body-row { display: flex; align-items: stretch; }
+#gN .ct-quality-col { width: 72px; flex-shrink: 0; margin-right: 16px; padding-top: 4px; }
+#gN .ct-quality-shape { width: 100%; height: 100%; clip-path: polygon(0 0, 100% 0, 50% 100%); background: var(--orange);
+  display: flex; justify-content: center; padding-top: 16px;
+  transform: scaleY(0); transform-origin: top center; transition: transform 0.7s cubic-bezier(0.22,1,0.36,1); }
+#gN .ct-quality-shape.animate { transform: scaleY(1); }
+#gN .ct-rows-col { flex: 1; display: flex; flex-direction: column; }
+#gN .ct-data-row { display: flex; align-items: center; padding: 22px 0; border-bottom: 1px solid rgba(26,26,26,0.12);
+  opacity: 0; transform: translateY(8px); transition: opacity 0.4s cubic-bezier(0.22,1,0.36,1), transform 0.4s cubic-bezier(0.22,1,0.36,1); }
+#gN .ct-data-row.visible { opacity: 1; transform: translateY(0); }
+#gN .ct-rows-col:has(.ct-data-row:hover) .ct-data-row:not(:hover) { opacity: 0.45; }
+#gN .ct-row-label { flex: 1; font-family: var(--font-sans); font-weight: 700; font-size: 16px; color: var(--ink); }
+#gN .ct-value { width: 104px; flex-shrink: 0; text-align: center; font-family: var(--font-mono); font-weight: 600; font-size: 15px; text-transform: uppercase; }
+#gN .ct-value.gpu { color: var(--grey-500); }
+#gN .ct-value.cerebras { width: 128px; color: var(--orange); font-weight: 700; }
+```
+
+JS trigger pattern (add to `animatePanel`):
+```js
+const qualityShape = panel.querySelector('.ct-quality-shape');
+if (qualityShape) setTimeout(() => qualityShape.classList.add('animate'), 150);
+panel.querySelectorAll('.ct-data-row').forEach((row, ri) => {
+  setTimeout(() => row.classList.add('visible'), 300 + ri * 120);
+});
 ```
 
 #### Shared responsive rules (global, declared once)

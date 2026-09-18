@@ -1,0 +1,69 @@
+/* ============================================================
+   CEREBRAS — CHART/GRAPH THEME TOKENS
+   Three themes for the graph library, selected by setting
+   [data-graph-theme] on a chart's root element:
+     - "dark-gradient"  ink background, Cerebras series painted
+                         with the signature orange gradient
+     - "dark-orange"    ink background, Cerebras series painted
+                         as flat brand orange (no gradient)
+     - "light"          white background, flat orange, pale grey-teal
+                         competitor fill (per Figma light-theme spec)
+   Every chart component should read ONLY the --graph-* tokens
+   below, never the raw --orange/--ink/--grey-* tokens directly,
+   so new themes can be added without touching component code.
+   ============================================================ */
+
+[data-graph-theme="dark-gradient"],
+[data-graph-theme="dark-orange"] {
+  --graph-bg: var(--ink);
+  --graph-fg: var(--white);
+  --graph-fg-secondary: var(--grey-500);
+  --graph-border: rgba(255, 255, 255, 0.08);
+  --graph-competitor-fill: linear-gradient(180deg, #694939 32.79%, rgba(105, 73, 57, 0) 100%);
+  --graph-competitor-fill-h: linear-gradient(270deg, #694939 32.79%, rgba(105, 73, 57, 0) 100%);
+  /* Multi-level competitor ramp (3+ non-Cerebras series in one chart, e.g.
+     a 4-segment donut or benchmark grid). Pixel-sampled from the Figma
+     dark-theme "Pie Chart" spec — supersedes an earlier derived guess. */
+  --graph-level-1: #DDBDAD;
+  --graph-level-2: #A98573;
+  --graph-level-3: #6A4A3A;
+  /* Default stroke for a chart's one non-Cerebras line/series (e.g.
+     LineChart's "GPU" comparison line) — sampled from the Figma line-chart
+     spec. Matches --graph-level-2, not the darkest ramp step, since that's
+     the shade that actually reads clearly against the ink background. */
+  --graph-line-secondary: var(--graph-level-2);
+}
+
+[data-graph-theme="dark-gradient"] {
+  --graph-cerebras-fill: linear-gradient(180deg, var(--orange-400) 0%, var(--orange) 95.19%);
+  --graph-cerebras-fill-h: linear-gradient(90deg, var(--orange) 4.8%, var(--orange-400) 100%);
+}
+
+[data-graph-theme="dark-orange"] {
+  --graph-cerebras-fill: var(--orange);
+  --graph-cerebras-fill-h: var(--orange);
+}
+
+[data-graph-theme="light"] {
+  --graph-bg: var(--white);
+  --graph-fg: var(--ink);
+  --graph-fg-secondary: var(--grey-500);
+  --graph-border: var(--border);
+  --graph-cerebras-fill: var(--orange);
+  --graph-cerebras-fill-h: var(--orange);
+  /* Pale grey-teal, sampled from the Figma light-theme spec (#CED9D8) —
+     not on the standard warm-grey ramp, so it's a chart-only value here
+     rather than a new global token for one narrow use. */
+  --graph-competitor-fill: #CED9D8;
+  --graph-competitor-fill-h: #CED9D8;
+  /* Multi-level competitor ramp, sampled pixel-exact from the Figma
+     light-theme spec's 4-series benchmark chart (light→dark). */
+  --graph-level-1: #CED9D8;
+  --graph-level-2: #748385;
+  --graph-level-3: #27393B;
+  /* Default stroke for a chart's one non-Cerebras line/series — sampled
+     from the Figma light-theme line-chart spec. Here it's the darkest
+     ramp step (--graph-level-3), the shade with enough contrast against
+     the cream background. */
+  --graph-line-secondary: var(--graph-level-3);
+}

@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inference — Cerebras</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Sometype+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --orange: #F15A29;
+    --orange-hover: #F74E11;
+    --orange-100: #FFE8DF;
+    --ink: #1A1A1A;
+    --ink-900: #262626;
+    --grey-800: #333332;
+    --grey-500: #807E7D;
+    --grey-400: #B3B1AF;
+    --grey-300: #CCCAC8;
+    --grey-200: #E6E6E6;
+    --cream: #F7F5F2;
+    --cream-alt: #ECE8E4;
+    --green: #90D729;
+    --teal-300: #82C7D4;
+    --purple-300: #B086E7;
+    --border: rgba(0,0,0,0.12);
+    --border-dark: rgba(255,255,255,0.14);
+    --radius-xs: 2px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --radius-2xl: 40px;
+    --ease-out: cubic-bezier(.22,1,.36,1);
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'Manrope', sans-serif;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  img { max-width: 100%; display: block; }
+  svg { display: block; }
+  .wrap { max-width: 1360px; margin: 0 auto; padding: 0 48px; }
+
+  .eyebrow {
+    font-family: 'Sometype Mono', monospace; font-weight: 600; font-size: 13px;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--orange);
+    display: inline-flex; align-items: center; gap: 8px; margin-bottom: 20px;
+  }
+  .eyebrow.on-dark { color: #ffb27f; }
+  h1, h2, h3 { font-family: 'Manrope', sans-serif; font-weight: 300; letter-spacing: -0.02em; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    height: 44px; padding: 0 22px; border-radius: var(--radius-xs); border: none; cursor: pointer;
+    font-family: 'Sometype Mono', monospace; font-weight: 600; font-size: 13px;
+    letter-spacing: 0.04em; text-transform: uppercase; text-decoration: none;
+    transition: background 150ms ease, transform 80ms ease, border-color 150ms ease;
+    white-space: nowrap;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn svg { width: 14px; height: 14px; transition: transform 200ms var(--ease-out); }
+  .btn:hover svg { transform: translateX(3px); }
+  .btn-ghost { background: var(--cream-alt); color: var(--ink); }
+  .btn-ghost:hover { background: #dbd7d1; }
+  .btn-dark { background: var(--ink); color: #fff; }
+  .btn-dark:hover { background: #2d2d2d; }
+  .btn-gradient { background: linear-gradient(154.46deg, #FFE365 17.3%, #FB490F 89.3%); color: var(--ink); }
+  .btn-gradient:hover { opacity: 0.92; }
+  .btn-white { background: #fff; color: var(--ink); }
+  .btn-white:hover { background: #f0eeeb; }
+  .btn-outline-dark { background: transparent; color: var(--ink); border: 1px solid var(--border); }
+  .btn-outline-dark:hover { border-color: var(--ink); }
+  .btn-outline-light { background: transparent; color: #fff; border: 1px solid var(--border-dark); }
+  .btn-outline-light:hover { border-color: #fff; }
+  .btn-icon { width: 44px; padding: 0; }
+
+  .logo-mark { color: var(--ink); display: block; }
+  .logo-mark svg { height: 100%; width: auto; }
+  .logo-svg-path { fill: currentColor; }
+
+  /* ── SCROLL REVEAL ─────────────────────────────────────────────── */
+  .reveal { opacity: 0; transform: translateY(22px); transition: opacity 640ms var(--ease-out), transform 640ms var(--ease-out); }
+  .reveal.in { opacity: 1; transform: translateY(0); }
+  .reveal-stagger.in > * { opacity: 1; transform: translateY(0); }
+  .reveal-stagger > * { opacity: 0; transform: translateY(18px); transition: opacity 560ms var(--ease-out), transform 560ms var(--ease-out); }
+  .reveal-stagger > *:nth-child(1) { transition-delay: 0ms; }
+  .reveal-stagger > *:nth-child(2) { transition-delay: 70ms; }
+  .reveal-stagger > *:nth-child(3) { transition-delay: 140ms; }
+  .reveal-stagger > *:nth-child(4) { transition-delay: 210ms; }
+  .reveal-stagger > *:nth-child(5) { transition-delay: 280ms; }
+  .reveal-stagger > *:nth-child(6) { transition-delay: 350ms; }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal, .reveal-stagger > * { opacity: 1 !important; transform: none !important; transition: none !important; }
+  }
+
+  /* ── NAV ─────────────────────────────────────────────────────── */
+  .nav-wrap { position: sticky; top: 0; z-index: 200; height: 108px; background: #fff; }
+  .nav { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; padding: 32px 48px; backdrop-filter: blur(30px); border-radius: 100px; }
+  .nav-logo-link { width: 130px; height: 24px; flex-shrink: 0; }
+  .nav-menu { position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 32px; list-style: none; }
+  .nav-menu a { font-family: 'Manrope', sans-serif; font-weight: 600; font-size: 14px; color: var(--ink); text-decoration: none; letter-spacing: -0.02em; transition: color 150ms ease; }
+  .nav-menu a:hover { color: var(--orange); }
+  .nav-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .nav-burger { display: none; width: 44px; height: 44px; border-radius: var(--radius-xs); border: none; background: var(--cream-alt); align-items: center; justify-content: center; cursor: pointer; }
+  .mobile-menu { position: fixed; inset: 108px 0 0 0; background: #fff; z-index: 199; display: none; flex-direction: column; padding: 32px 32px; gap: 4px; overflow-y: auto; }
+  .mobile-menu.open { display: flex; }
+  .mobile-menu a { font-family: 'Manrope', sans-serif; font-weight: 500; font-size: 20px; color: var(--ink); text-decoration: none; padding: 14px 4px; border-bottom: 1px solid var(--border); }
+  .mobile-menu .mobile-cta { display: flex; gap: 10px; margin-top: 20px; }
+
+  /* ── HERO ────────────────────────────────────────────────────── */
+  .hero {
+    position: relative; overflow: hidden; min-height: 640px; display: flex; align-items: center;
+    background:
+      radial-gradient(120% 140% at 15% 0%, #d4551f 0%, rgba(212,85,31,0) 55%),
+      radial-gradient(90% 120% at 75% 10%, #7a2c10 0%, rgba(122,44,16,0) 60%),
+      #2b1a12;
+    color: #fff; padding: 90px 0 64px;
+  }
+  .hero::before {
+    content: ""; position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent 70%);
+    pointer-events: none;
+  }
+  .hero-inner { position: relative; z-index: 2; display: flex; align-items: center; gap: 56px; width: 100%; }
+  .hero-text { flex: 1; max-width: 580px; }
+  .hero-eyebrow { font-family: 'Sometype Mono', monospace; font-weight: 600; font-size: 13px; letter-spacing: 0.06em; color: #ffb27f; margin-bottom: 16px; }
+  .hero-headline { font-weight: 300; font-size: 60px; line-height: 0.97; letter-spacing: -0.02em; margin-bottom: 20px; }
+  .hero-headline .accent { color: #ffb27f; }
+  .hero-body { font-weight: 500; font-size: 17px; line-height: 1.5; color: rgba(255,255,255,0.82); max-width: 480px; margin-bottom: 28px; }
+  .hero-cta { display: flex; gap: 12px; margin-bottom: 28px; }
+  .hero-microproof { display: flex; align-items: center; gap: 10px; font-family: 'Sometype Mono', monospace; font-size: 12px; color: rgba(255,255,255,0.55); }
+  .hero-microproof .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+  .hero-chart {
+    flex: 1; max-width: 500px; background: rgba(20,12,8,0.55); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: var(--radius-xl); padding: 24px; backdrop-filter: blur(8px);
+  }
+  .hero-chart-label { font-family: 'Sometype Mono', monospace; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.6); margin-bottom: 18px; }
+  .hero-bars { display: flex; align-items: flex-end; gap: 14px; height: 170px; }
+  .hero-bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; height: 100%; justify-content: flex-end; }
+  .hero-bar { width: 100%; border-radius: 2px 2px 0 0; transform: scaleY(0); transform-origin: bottom; transition: transform 900ms var(--ease-out); }
+  .hero-bar.grow { transform: scaleY(1); }
+  .hero-bar-tag { font-family: 'Sometype Mono', monospace; font-size: 10px; color: rgba(255,255,255,0.55); text-align: center; }
+
+  /* ── DEMO SECTION ────────────────────────────────────────────── */
+  .demo { background: var(--ink); color: #fff; padding: 88px 0 72px; }
+  .demo-head { max-width: 640px; margin-bottom: 40px; }
+  .demo-head h2 { font-size: 38px; color: #fff; margin-bottom: 12px; }
+  .demo-head p { font-weight: 500; font-size: 16px; color: rgba(255,255,255,0.65); line-height: 1.5; }
+  .demo-tabs { display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; }
+  .demo-tab {
+    font-family: 'Sometype Mono', monospace; font-weight: 600; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase;
+    padding: 10px 16px; border-radius: var(--radius-xs); border: 1px solid var(--border-dark); color: rgba(255,255,255,0.6);
+    background: transparent; cursor: pointer; transition: all 150ms ease;
+  }
+  .demo-tab.active { background: var(--orange); border-color: var(--orange); color: #fff; }
+  .demo-panel { background: #101010; border: 1px solid var(--border-dark); border-radius: var(--radius-xl); padding: 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 28px; min-height: 260px; }
+  .demo-panel-col h4 { font-family: 'Sometype Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.45); margin-bottom: 12px; }
+  .demo-task { font-weight: 500; font-size: 20px; line-height: 1.35; color: #fff; margin-bottom: 20px; }
+  .demo-speed { display: flex; align-items: baseline; gap: 8px; }
+  .demo-speed .num { font-weight: 300; font-size: 48px; color: var(--orange); }
+  .demo-speed .unit { font-family: 'Sometype Mono', monospace; font-size: 14px; color: rgba(255,255,255,0.6); }
+  .demo-code { background: #050505; border-radius: var(--radius-xs); padding: 16px; font-family: 'Sometype Mono', monospace; font-size: 12px; line-height: 1.7; color: #8fd98f; overflow: hidden; height: 100%; }
+
+  /* ── LOGO WALL ───────────────────────────────────────────────── */
+  .logos-band { background: var(--ink); border-top: 1px solid var(--border-dark); padding: 40px 0 88px; }
+  .logos-eyebrow { font-family: 'Sometype Mono', monospace; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 28px; text-align: center; }
+  .logos-viewport { position: relative; overflow: hidden; -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 8%, #000 92%, transparent 100%); mask-image: linear-gradient(to right, transparent 0%, #000 8%, #000 92%, transparent 100%); }
+  .logos-track { display: flex; align-items: center; gap: 64px; width: max-content; animation: marquee 34s linear infinite; }
+  .logos-track:hover { animation-play-state: paused; }
+  @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  .logo-item { font-family: 'Sometype Mono', monospace; font-weight: 600; font-size: 17px; letter-spacing: 0.02em; color: rgba(255,255,255,0.4); white-space: nowrap; transition: color 200ms ease; }
+  .logo-item:hover { color: rgba(255,255,255,0.85); }
+
+  /* ── SHARED SECTION SHELL ────────────────────────────────────── */
+  section { padding: 112px 0; }
+  .section-cream { background: var(--cream); }
+  .section-paper { background: var(--cream-alt); }
+  .section-ink { background: var(--ink); color: #fff; }
+  .section-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 40px; margin-bottom: 56px; }
+  .section-head h2 { font-size: 40px; color: var(--ink); max-width: 620px; }
+  .section-ink .section-head h2 { color: #fff; }
+  .section-head p { font-weight: 500; font-size: 16px; line-height: 1.5; color: var(--grey-500); max-width: 400px; text-align: right; }
+  .section-ink .section-head p { color: rgba(255,255,255,0.6); }
+
+  /* ── WHY IT'S FAST (architecture) ────────────────────────────── */
+  .arch-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius-xl); overflow: hidden; margin-bottom: 20px; }
+  .arch-card { background: #fff; padding: 40px 36px; display: flex; flex-direction: column; gap: 16px; }
+  .arch-num { font-family: 'Sometype Mono', monospace; font-size: 12px; color: var(--orange); font-weight: 600; }
+  .arch-stat { font-weight: 300; font-size: 40px; letter-spacing: -0.02em; color: var(--ink); }
+  .arch-card h4 { font-family: 'Manrope', sans-serif; font-weight: 600; font-size: 17px; letter-spacing: -0.01em; color: var(--ink); }
+  .arch-card p { font-weight: 500; font-size: 14px; line-height: 1.55; color: var(--grey-500); }
+  .arch-vs { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 24px; border-radius: var(--radius-xs); background: rgba(0,0,0,0.03); font-family: 'Sometype Mono', monospace; font-size: 12px; letter-spacing: 0.03em; text-transform: uppercase; color: var(--grey-500); }
+  .arch-vs a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--border-strong, rgba(0,0,0,0.3)); }
+
+  /* ── VERIFIED-BY BANNER ──────────────────────────────────────── */
+  .verify-banner { padding: 0; }
+  .verify-inner {
+    display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;
+    padding: 24px 40px; background: #fff; border: 1px solid var(--border); border-radius: var(--radius-lg);
+  }
+  .verify-left { display: flex; align-items: center; gap: 14px; }
+  .verify-badge { width: 36px; height: 36px; border-radius: 50%; background: var(--orange-100); color: var(--orange); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .verify-badge svg { width: 18px; height: 18px; }
+  .verify-text strong { display: block; font-size: 14.5px; font-weight: 600; color: var(--ink); }
+  .verify-text span { font-size: 13px; color: var(--grey-500); }
+  .verify-inner .btn-text { height: auto; padding: 0; background: none; color: var(--ink); font-size: 13px; border-bottom: 1px solid var(--ink); border-radius: 0; }
+
+  /* ── BENCHMARK LEADERBOARD (ink) ─────────────────────────────── */
+  .speed-list { display: flex; flex-direction: column; }
+  .speed-row {
+    position: relative; display: grid; grid-template-columns: 26px 1fr auto 90px; align-items: center; gap: 18px;
+    padding: 18px 8px; border-top: 1px solid var(--border-dark);
+  }
+  .speed-row:last-child { border-bottom: 1px solid var(--border-dark); }
+  .speed-row::before {
+    content: ""; position: absolute; inset: 0; width: var(--fill, 0%);
+    background: linear-gradient(90deg, rgba(241,90,41,0.16), rgba(241,90,41,0)); z-index: 0;
+    transform-origin: left; transform: scaleX(0); transition: transform 900ms var(--ease-out);
+  }
+  .speed-row.in::before { transform: scaleX(1); }
+  .speed-row:nth-child(1)::before { transition-delay: 0ms; }
+  .speed-row:nth-child(2)::before { transition-delay: 80ms; }
+  .speed-row:nth-child(3)::before { transition-delay: 160ms; }
+  .speed-row:nth-child(4)::before { transition-delay: 240ms; }
+  .speed-row:nth-child(5)::before { transition-delay: 320ms; }
+  .speed-row:nth-child(6)::before { transition-delay: 400ms; }
+  .speed-rank { position: relative; z-index: 1; font-family: 'Sometype Mono', monospace; font-size: 12px; color: var(--grey-400); }
+  .speed-model { position: relative; z-index: 1; font-weight: 600; font-size: 15px; color: #fff; letter-spacing: -0.01em; }
+  .speed-model .params { display: block; font-family: 'Sometype Mono', monospace; font-weight: 600; font-size: 10.5px; letter-spacing: 0.03em; text-transform: uppercase; color: var(--grey-400); margin-top: 2px; }
+  .speed-values { position: relative; z-index: 1; display: flex; align-items: baseline; gap: 9px; font-family: 'Sometype Mono', monospace; white-space: nowrap; }
+  .speed-gpu { font-size: 12px; color: rgba(255,255,255,0.4); }
+  .speed-arrow { font-size: 12px; color: rgba(255,255,255,0.3); }
+  .speed-cerebras { font-size: 14px; font-weight: 600; color: #fff; }
+  .speed-multiplier { position: relative; z-index: 1; font-family: 'Sometype Mono', monospace; font-weight: 600; font-size: 15px; color: var(--orange); background: rgba(241,90,41,0.16); padding: 7px 10px; border-radius: 4px; text-align: center; justify-self: end; }
+
+  /* ── MODEL CATALOG (browsing grid) ───────────────────────────── */
+  .model-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 40px; }
+  .model-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-xs); padding: 26px; transition: transform 150ms var(--ease-out), box-shadow 150ms var(--ease-out); }
+  .model-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(26,26,26,0.08); }
+  .model-card .tag-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; }
+  .model-card .badge { font-family: 'Sometype Mono', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--orange); background: var(--orange-100); padding: 4px 8px; border-radius: var(--radius-xs); }
+  .model-card .params { font-family: 'Sometype Mono', monospace; font-size: 11px; color: var(--grey-500); }
+  .model-card h4 { font-family: 'Manrope', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; margin-bottom: 18px; color: var(--ink); }
+  .model-card .foot { display: flex; justify-content: space-between; align-items: flex-end; }
+  .model-card .speed { display: flex; align-items: baseline; gap: 5px; }
+  .model-card .speed .n { font-weight: 300; font-size: 30px; color: var(--ink); }
+  .model-card .speed .u { font-family: 'Sometype Mono', monospace; font-size: 12px; color: var(--grey-500); }
+  .model-card .ctx { font-family: 'Sometype Mono', monospace; font-size: 11px; color: var(--grey-400); text-align: right; }
+  .model-card .ctx b { display: block; font-size: 13px; color: var(--grey-800); font-weight: 600; }
+
+  /* ── GET STARTED CODE COMPARE ────────────────────────────────── */
+  .code-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .code-panel { background: #101010; border: 1px solid var(--border-dark); border-radius: var(--radius-lg); padding: 24px; }
+  .code-panel .code-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .code-panel .code-head span { font-family: 'Sometype Mono', monospace; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(255,255,255,0.5); }
+  .copy-btn { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: var(--radius-xs); border: 1px solid var(--border-dark); background: transparent; color: rgba(255,255,255,0.5); cursor: pointer; transition: all 150ms ease; }
+  .copy-btn svg { width: 13px; height: 13px; }
+  .copy-btn:hover { color: #fff; border-color: rgba(255,255,255,0.4); }
+  .copy-btn.copied { color: var(--green); border-color: var(--green); }
+  .code-panel pre { font-family: 'Sometype Mono', monospace; font-size: 12.5px; line-height: 1.8; color: rgba(255,255,255,0.75); overflow-x: auto; }
+  .code-panel .hl { color: #ffb27f; background: rgba(241,90,41,0.16); border-radius: 2px; }
+  .code-panel.changed { border-color: var(--orange); }
+
+  /* ── PRICING ──────────────────────────────────────────────────── */
+  .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .price-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 40px 32px; display: flex; flex-direction: column; transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out); }
+  .price-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(26,26,26,0.10); }
+  .price-card.featured { background: var(--ink); color: #fff; border-color: var(--ink); position: relative; }
+  .price-card.featured::before {
+    content: "MOST POPULAR"; position: absolute; top: -1px; right: 32px; transform: translateY(-50%);
+    font-family: 'Sometype Mono', monospace; font-size: 10px; letter-spacing: 0.06em; font-weight: 600;
+    background: var(--orange); color: #fff; padding: 5px 10px; border-radius: var(--radius-xs);
+  }
+  .price-card .tier-name { font-family: 'Sometype Mono', monospace; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--orange); margin-bottom: 16px; }
+  .price-card .tier-price { font-weight: 300; font-size: 38px; letter-spacing: -0.02em; margin-bottom: 4px; }
+  .price-card .tier-price span { font-family: 'Sometype Mono', monospace; font-weight: 600; font-size: 14px; color: var(--grey-500); }
+  .price-card.featured .tier-price span { color: rgba(255,255,255,0.5); }
+  .price-card .tier-desc { font-weight: 500; font-size: 14px; line-height: 1.55; color: var(--grey-500); margin: 16px 0 24px; }
+  .price-card.featured .tier-desc { color: rgba(255,255,255,0.6); }
+  .price-card .tier-features { list-style: none; display: flex; flex-direction: column; gap: 11px; margin-bottom: 28px; flex: 1; }
+  .price-card .tier-features li { display: flex; align-items: flex-start; gap: 9px; font-size: 13.5px; font-weight: 500; color: var(--ink); }
+  .price-card.featured .tier-features li { color: rgba(255,255,255,0.88); }
+  .price-card .tier-features svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; color: var(--orange); }
+  .price-card .btn { width: 100%; margin-top: auto; }
+
+  /* ── CUSTOMER STORIES ─────────────────────────────────────────── */
+  .quote-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .quote-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 32px; display: flex; flex-direction: column; }
+  .quote-mark { font-family: 'Manrope', sans-serif; font-weight: 300; font-size: 48px; line-height: 1; color: var(--orange); margin-bottom: 8px; }
+  .quote-text { font-weight: 500; font-size: 15.5px; line-height: 1.55; color: var(--ink); margin-bottom: 24px; flex: 1; }
+  .quote-person { display: flex; flex-direction: column; gap: 2px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .quote-person .name { font-weight: 600; font-size: 14px; color: var(--ink); }
+  .quote-person .role { font-family: 'Sometype Mono', monospace; font-size: 11px; letter-spacing: 0.03em; color: var(--grey-500); text-transform: uppercase; }
+
+  /* ── FINAL CTA ────────────────────────────────────────────────── */
+  .final-cta {
+    border-radius: var(--radius-2xl); padding: 88px 72px; text-align: center; position: relative; overflow: hidden;
+    background: radial-gradient(140% 120% at 24% 2%, #F17929 0%, rgba(241,121,41,0) 62%), radial-gradient(115% 100% at 35% -14%, #F15429 0%, rgba(241,84,41,0) 100%), #2C0B02;
+    color: #fff;
+  }
+  .final-cta h2 { font-size: 44px; color: #fff; max-width: 720px; margin: 0 auto 20px; position: relative; z-index: 1; }
+  .final-cta p { font-weight: 500; font-size: 16px; color: rgba(255,255,255,0.75); max-width: 520px; margin: 0 auto 36px; position: relative; z-index: 1; }
+  .final-cta-actions { display: flex; gap: 12px; justify-content: center; position: relative; z-index: 1; }
+
+  /* ── FOOTER ───────────────────────────────────────────────────── */
+  footer { background: var(--ink); color: rgba(255,255,255,0.6); padding: 72px 0 32px; }
+  .footer-newsletter { display: flex; justify-content: space-between; align-items: center; gap: 32px; padding-bottom: 48px; margin-bottom: 48px; border-bottom: 1px solid var(--border-dark); flex-wrap: wrap; }
+  .footer-newsletter h4 { font-family: 'Manrope', sans-serif; font-weight: 500; font-size: 22px; color: #fff; margin-bottom: 6px; }
+  .footer-newsletter p { font-size: 14px; color: rgba(255,255,255,0.5); }
+  .newsletter-form { display: flex; gap: 8px; flex-shrink: 0; }
+  .newsletter-form input { height: 44px; padding: 0 16px; border-radius: var(--radius-xs); border: 1px solid var(--border-dark); background: rgba(255,255,255,0.04); color: #fff; font-family: 'Manrope', sans-serif; font-size: 14px; width: 260px; }
+  .newsletter-form input::placeholder { color: rgba(255,255,255,0.35); }
+  .newsletter-form input:focus { outline: none; border-color: var(--orange); }
+  .footer-top { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 56px; }
+  .footer-brand .logo-mark { color: #fff; width: 130px; height: 24px; margin-bottom: 16px; }
+  .footer-brand p { font-size: 14px; line-height: 1.5; max-width: 260px; color: rgba(255,255,255,0.5); }
+  .footer-col h5 { font-family: 'Sometype Mono', monospace; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(255,255,255,0.85); margin-bottom: 16px; }
+  .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .footer-col a { color: rgba(255,255,255,0.55); text-decoration: none; font-size: 14px; transition: color 150ms ease; }
+  .footer-col a:hover { color: #fff; }
+  .footer-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 28px; border-top: 1px solid var(--border-dark); font-size: 13px; color: rgba(255,255,255,0.4); }
+
+  @media (max-width: 1100px) {
+    .arch-grid, .quote-grid { grid-template-columns: 1fr; }
+    .model-grid { grid-template-columns: repeat(2, 1fr); }
+    .pricing-grid { grid-template-columns: 1fr; max-width: 440px; margin: 0 auto; }
+    .code-compare { grid-template-columns: 1fr; }
+    .footer-top { grid-template-columns: 1fr 1fr; }
+    .speed-row { grid-template-columns: 22px 1fr 80px; }
+    .speed-values { display: none; }
+  }
+  @media (max-width: 760px) {
+    .wrap { padding: 0 24px; }
+    .nav { padding: 20px 20px; }
+    .nav-menu, .nav-actions .btn-dark { display: none; }
+    .nav-burger { display: flex; }
+    section { padding: 72px 0; }
+    .hero { padding: 48px 0; min-height: auto; }
+    .hero-inner { flex-direction: column; gap: 32px; }
+    .hero-headline { font-size: 42px; }
+    .hero-chart { max-width: 100%; }
+    .demo-panel { grid-template-columns: 1fr; }
+    .section-head { flex-direction: column; align-items: flex-start; }
+    .section-head p { text-align: left; }
+    .model-grid, .quote-grid { grid-template-columns: 1fr; }
+    .verify-inner { flex-direction: column; align-items: flex-start; }
+    .final-cta { padding: 56px 28px; }
+    .final-cta h2 { font-size: 32px; }
+    .final-cta-actions { flex-direction: column; }
+    .footer-top { grid-template-columns: 1fr; gap: 32px; }
+    .footer-newsletter { flex-direction: column; align-items: flex-start; }
+    .newsletter-form { width: 100%; }
+    .newsletter-form input { width: 100%; }
+    .footer-bottom { flex-direction: column; gap: 8px; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ NAV ═══ -->
+<div class="nav-wrap">
+  <nav class="nav">
+    <a href="#" class="nav-logo-link logo-mark" aria-label="Cerebras">
+      <svg width="100.159" height="24" viewBox="0 0 100.159 24" fill="none"><path class="logo-svg-path" d="M 10.668 16.914 C 11.083 17.029 11.52 17.09 11.971 17.09 C 12.392 17.09 12.801 17.037 13.191 16.937 L 11.298 24 L 8.938 23.368 L 10.668 16.914 Z M 17.366 22.729 L 15.007 23.36 L 13.279 16.913 C 14.12 16.68 14.87 16.228 15.463 15.622 L 17.366 22.729 Z M 8.439 15.58 C 9.02 16.188 9.756 16.646 10.584 16.891 L 5.407 22.067 L 3.68 20.34 L 8.439 15.58 Z M 21.986 18.593 L 20.259 20.32 L 15.511 15.572 C 16.097 14.957 16.524 14.188 16.727 13.333 L 21.986 18.593 Z M 48.192 9.229 C 49.171 9.229 49.834 9.618 50.266 10.237 L 50.295 10.237 L 50.295 9.445 L 52.541 9.445 L 52.541 16.098 C 52.541 17.206 52.152 18.013 51.562 18.546 C 50.914 19.122 49.949 19.366 48.854 19.366 C 46.824 19.366 45.485 18.531 45.255 16.99 L 47.529 16.99 C 47.659 17.379 48.049 17.711 48.826 17.711 C 49.819 17.711 50.237 17.192 50.237 16.3 L 50.237 15.564 L 50.18 15.564 C 49.748 16.054 49.186 16.414 48.293 16.414 C 46.637 16.414 45.096 15.176 45.096 12.915 C 45.096 10.755 46.364 9.229 48.192 9.229 Z M 69.678 9.229 C 71.636 9.229 72.832 10.913 72.832 13.131 C 72.832 15.521 71.55 17.048 69.62 17.048 C 68.67 17.048 67.993 16.674 67.532 16.055 L 67.504 16.055 L 67.504 19.251 L 65.156 19.251 L 65.156 9.445 L 67.402 9.445 L 67.402 10.338 L 67.446 10.338 C 67.95 9.676 68.67 9.229 69.678 9.229 Z M 7.214 13.326 C 7.412 14.168 7.828 14.927 8.399 15.538 L 1.271 17.448 L 0.64 15.089 L 7.214 13.326 Z M 40.811 9.243 C 43.186 9.243 44.741 10.928 44.741 13.146 C 44.741 15.363 43.186 17.048 40.811 17.048 C 38.449 17.048 36.865 15.363 36.865 13.146 C 36.865 10.928 38.449 9.243 40.811 9.243 Z M 57.174 9.243 C 59.55 9.243 61.104 10.928 61.104 13.146 C 61.104 15.363 59.55 17.048 57.174 17.048 C 54.812 17.048 53.229 15.363 53.229 13.146 C 53.229 10.928 54.812 9.243 57.174 9.243 Z M 76.451 9.229 C 78.539 9.229 79.663 10.136 79.778 11.591 L 77.618 11.591 C 77.532 10.929 77.085 10.727 76.438 10.727 C 75.861 10.727 75.415 10.943 75.415 11.403 C 75.415 11.922 76.25 11.994 77.186 12.167 C 78.482 12.383 80.008 12.714 80.008 14.601 C 80.008 16.213 78.583 17.048 76.653 17.048 C 74.493 17.048 73.14 16.055 73.067 14.428 L 75.285 14.428 C 75.372 15.162 75.861 15.521 76.639 15.521 C 77.344 15.521 77.791 15.262 77.791 14.787 C 77.791 14.125 76.898 14.053 75.919 13.88 C 74.637 13.664 73.269 13.319 73.269 11.591 C 73.269 10.036 74.709 9.229 76.451 9.229 Z M 82.938 13.794 C 82.938 14.6 83.297 15.047 84.046 15.047 C 84.852 15.047 85.342 14.442 85.342 13.563 L 85.342 9.445 L 87.689 9.445 L 87.689 16.817 L 85.443 16.817 L 85.443 15.91 L 85.399 15.91 C 84.867 16.63 84.219 17.033 83.196 17.033 C 81.497 17.033 80.604 15.925 80.604 14.283 L 80.604 9.445 L 82.938 9.445 L 82.938 13.794 Z M 31.925 14.657 L 36.547 14.657 L 36.547 16.817 L 29.376 16.817 L 29.376 6.521 L 31.925 6.521 L 31.925 14.657 Z M 64.138 16.817 L 61.791 16.817 L 61.791 9.445 L 64.138 9.445 L 64.138 16.817 Z M 97.653 9.229 C 99.324 9.229 100.159 10.367 100.159 12.022 L 100.159 16.817 L 97.812 16.817 L 97.812 12.44 C 97.812 11.648 97.48 11.188 96.774 11.188 C 96.026 11.188 95.609 11.806 95.608 12.685 L 95.608 16.817 L 93.261 16.817 L 93.261 12.44 C 93.261 11.649 92.93 11.188 92.225 11.188 C 91.49 11.188 91.058 11.806 91.058 12.685 L 91.058 16.817 L 88.711 16.817 L 88.711 9.445 L 90.957 9.445 L 90.957 10.496 L 91 10.496 C 91.461 9.733 92.167 9.229 93.232 9.229 C 94.197 9.229 94.931 9.733 95.306 10.525 L 95.335 10.525 C 95.911 9.633 96.703 9.229 97.653 9.229 Z M 40.796 10.899 C 39.774 10.899 39.241 11.806 39.241 13.146 C 39.241 14.485 39.774 15.378 40.796 15.378 C 41.818 15.378 42.365 14.485 42.365 13.146 C 42.365 11.806 41.818 10.899 40.796 10.899 Z M 57.159 10.899 C 56.137 10.9 55.605 11.807 55.604 13.146 C 55.604 14.485 56.137 15.378 57.159 15.378 C 58.182 15.378 58.729 14.485 58.729 13.146 C 58.729 11.806 58.182 10.899 57.159 10.899 Z M 68.973 11.115 C 67.95 11.115 67.432 12.023 67.432 13.218 C 67.432 14.413 68.008 15.233 69.016 15.233 C 69.908 15.233 70.456 14.471 70.456 13.218 C 70.456 11.951 69.98 11.115 68.973 11.115 Z M 15.056 0.632 L 13.285 7.24 L 18.511 2.014 L 20.238 3.741 L 15.407 8.573 L 22.646 6.634 L 23.279 8.993 L 16.679 10.762 L 23.919 12.701 L 23.286 15.062 L 16.732 13.306 C 16.814 12.952 16.857 12.583 16.857 12.204 C 16.857 9.506 14.669 7.317 11.971 7.317 C 9.272 7.318 7.085 9.506 7.085 12.204 C 7.085 12.585 7.128 12.956 7.211 13.313 L 0 11.38 L 0.632 9.021 L 7.232 10.789 L 1.933 5.489 L 3.66 3.762 L 8.491 8.593 L 6.552 1.354 L 8.912 0.722 L 10.707 7.422 L 12.695 0 L 15.056 0.632 Z M 48.84 11 C 47.962 11 47.386 11.721 47.386 12.844 C 47.386 13.952 47.962 14.672 48.84 14.672 C 49.862 14.672 50.338 13.866 50.338 12.829 C 50.338 11.835 49.819 11 48.84 11 Z M 64.138 8.423 L 61.791 8.423 L 61.791 6.521 L 64.138 6.521 L 64.138 8.423 Z" fill-rule="nonzero"></path></svg>
+    </a>
+    <ul class="nav-menu">
+      <li><a href="#">Products</a></li>
+      <li><a href="#">Customers</a></li>
+      <li><a href="#">Developers</a></li>
+      <li><a href="#">Resources</a></li>
+      <li><a href="#">Pricing</a></li>
+      <li><a href="#">Company</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="btn btn-ghost btn-icon" aria-label="Search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M 11 0 C 8.083 0 5.285 1.159 3.222 3.222 C 1.159 5.285 0 8.083 0 11 C 0 13.917 1.159 16.715 3.222 18.778 C 5.285 20.841 8.083 22 11 22 C 13.328 22 15.579 21.262 17.442 19.917 L 21.525 24 L 24 21.525 L 19.917 17.442 C 21.262 15.579 22 13.327 22 11 C 22 8.083 20.841 5.285 18.778 3.222 C 16.715 1.159 13.917 0 11 0 Z M 4.99 4.99 C 6.584 3.396 8.746 2.5 11 2.5 C 13.254 2.5 15.416 3.396 17.01 4.99 C 18.604 6.584 19.5 8.746 19.5 11 C 19.5 13.254 18.604 15.416 17.01 17.01 C 15.416 18.604 13.254 19.5 11 19.5 C 8.746 19.5 6.584 18.604 4.99 17.01 C 3.396 15.416 2.5 13.254 2.5 11 C 2.5 8.746 3.396 6.584 4.99 4.99 Z" fill="currentColor" fill-rule="evenodd"/></svg>
+      </button>
+      <a href="#" class="btn btn-dark">Contact us</a>
+      <a href="#" class="btn btn-gradient">Get started</a>
+      <button class="nav-burger" id="burgerBtn" aria-label="Open menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M 0 2.5 L 24 2.5 L 24 0 L 0 0 L 0 2.5 Z M 0 12.5 L 24 12.5 L 24 10 L 0 10 L 0 12.5 Z" fill="currentColor" fill-rule="evenodd" transform="matrix(1 0 0 1 0 5.750)"/></svg>
+      </button>
+    </div>
+  </nav>
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#">Products</a>
+    <a href="#">Customers</a>
+    <a href="#">Developers</a>
+    <a href="#">Resources</a>
+    <a href="#">Pricing</a>
+    <a href="#">Company</a>
+    <div class="mobile-cta">
+      <a href="#" class="btn btn-dark" style="flex:1;">Contact us</a>
+      <a href="#" class="btn btn-gradient" style="flex:1;">Get started</a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero">
+  <div class="wrap hero-inner">
+    <div class="hero-text">
+      <div class="hero-eyebrow">// Inference Cloud</div>
+      <h1 class="hero-headline">The fastest way<br>to run <span class="accent">any model</span></h1>
+      <p class="hero-body">Cerebras Inference runs leading open models up to 15× faster than GPU clouds — on silicon purpose-built for it, not a workaround bolted onto one. Build agents, voice, and coding tools that feel instant.</p>
+      <div class="hero-cta">
+        <a href="#" class="btn btn-white">Start building</a>
+        <a href="#" class="btn btn-outline-light">Watch the demo</a>
+      </div>
+      <div class="hero-microproof"><span class="dot"></span>Speeds independently measured by Artificial Analysis</div>
+    </div>
+    <div class="hero-chart">
+      <div class="hero-chart-label">// Tok/sec — Llama 3.3 70B, output speed</div>
+      <div class="hero-bars">
+        <div class="hero-bar-col"><div class="hero-bar" data-h="32" style="background:var(--grey-400);"></div><div class="hero-bar-tag">GEMINI</div></div>
+        <div class="hero-bar-col"><div class="hero-bar" data-h="22" style="background:var(--grey-400);"></div><div class="hero-bar-tag">OPENAI</div></div>
+        <div class="hero-bar-col"><div class="hero-bar" data-h="18" style="background:var(--grey-400);"></div><div class="hero-bar-tag">CLAUDE</div></div>
+        <div class="hero-bar-col"><div class="hero-bar" data-h="100" style="background:var(--orange);"></div><div class="hero-bar-tag" style="color:#fff;">CEREBRAS</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ LIVE DEMO ═══ -->
+<section class="demo">
+  <div class="wrap">
+    <div class="demo-head reveal">
+      <h2>Unmatched speed in action</h2>
+      <p>Watch Cerebras deliver top quality answers in a fraction of the time it takes GPUs.</p>
+    </div>
+    <div class="demo-tabs">
+      <button class="demo-tab active" data-idx="0">GPT-5.6 Sol Ultrafast — Humanity's Last Exam</button>
+      <button class="demo-tab" data-idx="1">Kimi K2.6 — Financial Dashboard</button>
+      <button class="demo-tab" data-idx="2">GLM 4.7 — Pool Game in HTML</button>
+      <button class="demo-tab" data-idx="3">Codex-Spark — Salesforce Clone</button>
+    </div>
+    <div class="demo-panel">
+      <div class="demo-panel-col">
+        <h4>Prompt</h4>
+        <div class="demo-task" id="demoTask">"Solve this Humanity's Last Exam question and show your reasoning."</div>
+        <h4>Output speed</h4>
+        <div class="demo-speed"><span class="num" id="demoSpeed">2,847</span><span class="unit">tok/sec</span></div>
+      </div>
+      <div class="demo-panel-col">
+        <h4>Live output</h4>
+        <div class="demo-code" id="demoCode">&gt; Analyzing problem structure...<br>&gt; Cross-referencing constraints...<br>&gt; Reasoning chain established.<br>&gt; Verifying against edge cases...<br>&gt; Answer: confirmed, step 7 of 7.<br>&gt; Response complete — 0.9s.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ LOGO WALL — immediate social proof, straight after the demo ═══ -->
+<div class="logos-band">
+  <div class="logos-eyebrow">// Trusted by builders and enterprises worldwide</div>
+  <div class="logos-viewport">
+    <div class="logos-track">
+      <span class="logo-item">GSK</span><span class="logo-item">Meta</span><span class="logo-item">DeepLearning.AI</span><span class="logo-item">Nasdaq</span><span class="logo-item">LangChain</span><span class="logo-item">Docker</span><span class="logo-item">LlamaIndex</span><span class="logo-item">LiveKit</span><span class="logo-item">Weights &amp; Biases</span><span class="logo-item">Notion</span>
+      <span class="logo-item" aria-hidden="true">GSK</span><span class="logo-item" aria-hidden="true">Meta</span><span class="logo-item" aria-hidden="true">DeepLearning.AI</span><span class="logo-item" aria-hidden="true">Nasdaq</span><span class="logo-item" aria-hidden="true">LangChain</span><span class="logo-item" aria-hidden="true">Docker</span><span class="logo-item" aria-hidden="true">LlamaIndex</span><span class="logo-item" aria-hidden="true">LiveKit</span><span class="logo-item" aria-hidden="true">Weights &amp; Biases</span><span class="logo-item" aria-hidden="true">Notion</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ WHY IT'S FAST — architecture depth ═══ -->
+<section class="section-cream">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <h2>Why it's fast</h2>
+      <p>Not a faster GPU. A different piece of silicon, built so there's nothing to wait on.</p>
+    </div>
+    <div class="arch-grid reveal-stagger">
+      <div class="arch-card">
+        <span class="arch-num">01</span>
+        <span class="arch-stat">44GB</span>
+        <h4>No memory bandwidth wall</h4>
+        <p>GPUs page model weights in and out of HBM for every token. The WSE-3 keeps the entire model in 44GB of on-chip SRAM, so there's nothing to fetch and nothing to wait on.</p>
+      </div>
+      <div class="arch-card">
+        <span class="arch-num">02</span>
+        <span class="arch-stat">900K</span>
+        <h4>One chip, not a cluster</h4>
+        <p>A single wafer-scale chip replaces racks of interconnected GPUs. 900K AI-optimized cores run in lockstep with no network hops between them to throttle multi-GPU inference.</p>
+      </div>
+      <div class="arch-card">
+        <span class="arch-num">03</span>
+        <span class="arch-stat">1×</span>
+        <h4>Full speed at batch size one</h4>
+        <p>GPUs need large batches to stay efficient, which is why shared endpoints get slower under load. Cerebras hits peak tokens/sec even for a single user — what makes agents feel instant.</p>
+      </div>
+    </div>
+    <div class="arch-vs">Read the architecture deep-dive on the Cerebras <a href="#">engineering blog &rarr;</a></div>
+  </div>
+</section>
+
+<!-- ═══ VERIFIED BY — independent benchmark citation ═══ -->
+<section class="section-paper" style="padding: 64px 0;">
+  <div class="wrap">
+    <div class="verify-inner reveal">
+      <div class="verify-left">
+        <div class="verify-badge">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z" fill="currentColor"/></svg>
+        </div>
+        <div class="verify-text">
+          <strong>Independently benchmarked, not self-reported</strong>
+          <span>Every number on this page is measured the same way GPU clouds are — by a third party.</span>
+        </div>
+      </div>
+      <a href="#" class="btn btn-text">View the Artificial Analysis leaderboard &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ BENCHMARK LEADERBOARD ═══ -->
+<section class="section-ink">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <h2>Unmatched speed, model by model</h2>
+      <p>Ranked by how much faster Cerebras runs each model versus GPU clouds — worst case, still 14× faster.</p>
+    </div>
+    <div class="speed-list" id="speedList">
+      <div class="speed-row" style="--fill: 100%;">
+        <span class="speed-rank">01</span>
+        <span class="speed-model">OpenAI OSS-GPT-120B<span class="params">120B params</span></span>
+        <span class="speed-values"><span class="speed-gpu">115 tok/s</span><span class="speed-arrow">&rarr;</span><span class="speed-cerebras">3,000 tok/s</span></span>
+        <span class="speed-multiplier">26.1&times;</span>
+      </div>
+      <div class="speed-row" style="--fill: 77%;">
+        <span class="speed-rank">02</span>
+        <span class="speed-model">Qwen3 Coder 480B<span class="params">480B params</span></span>
+        <span class="speed-values"><span class="speed-gpu">100 tok/s</span><span class="speed-arrow">&rarr;</span><span class="speed-cerebras">2,000 tok/s</span></span>
+        <span class="speed-multiplier">20&times;</span>
+      </div>
+      <div class="speed-row" style="--fill: 63%;">
+        <span class="speed-rank">03</span>
+        <span class="speed-model">Qwen3 235B<span class="params">235B params</span></span>
+        <span class="speed-values"><span class="speed-gpu">85 tok/s</span><span class="speed-arrow">&rarr;</span><span class="speed-cerebras">1,400 tok/s</span></span>
+        <span class="speed-multiplier">16.5&times;</span>
+      </div>
+      <div class="speed-row" style="--fill: 61%;">
+        <span class="speed-rank">04</span>
+        <span class="speed-model">Qwen3 32B<span class="params">32B params</span></span>
+        <span class="speed-values"><span class="speed-gpu">150 tok/s</span><span class="speed-arrow">&rarr;</span><span class="speed-cerebras">2,400 tok/s</span></span>
+        <span class="speed-multiplier">16&times;</span>
+      </div>
+      <div class="speed-row" style="--fill: 56%;">
+        <span class="speed-rank">05</span>
+        <span class="speed-model">Llama 3.3 70B<span class="params">70B params</span></span>
+        <span class="speed-values"><span class="speed-gpu">170 tok/s</span><span class="speed-arrow">&rarr;</span><span class="speed-cerebras">2,500 tok/s</span></span>
+        <span class="speed-multiplier">14.7&times;</span>
+      </div>
+      <div class="speed-row" style="--fill: 54%;">
+        <span class="speed-rank">06</span>
+        <span class="speed-model">Llama 4 Maverick<span class="params">params n/a</span></span>
+        <span class="speed-values"><span class="speed-gpu">179 tok/s</span><span class="speed-arrow">&rarr;</span><span class="speed-cerebras">2,500 tok/s</span></span>
+        <span class="speed-multiplier">14&times;</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ MODEL CATALOG — browse, not benchmark ═══ -->
+<section class="section-cream">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <h2>Leading models, ready to call</h2>
+      <p>Pick the model for your use case — swap between them with the same API call.</p>
+    </div>
+    <div class="model-grid reveal-stagger">
+      <div class="model-card">
+        <div class="tag-row"><span class="badge">Flagship</span><span class="params">120B params</span></div>
+        <h4>GPT-5.6 Sol Ultrafast</h4>
+        <div class="foot"><div class="speed"><span class="n">2,847</span><span class="u">tok/s</span></div><div class="ctx"><b>131K</b>context</div></div>
+      </div>
+      <div class="model-card">
+        <div class="tag-row"><span class="badge">Agentic</span><span class="params">1T params</span></div>
+        <h4>Kimi K2.6</h4>
+        <div class="foot"><div class="speed"><span class="n">2,100</span><span class="u">tok/s</span></div><div class="ctx"><b>128K</b>context</div></div>
+      </div>
+      <div class="model-card">
+        <div class="tag-row"><span class="badge">Open weight</span><span class="params">355B params</span></div>
+        <h4>GLM 4.7</h4>
+        <div class="foot"><div class="speed"><span class="n">1,980</span><span class="u">tok/s</span></div><div class="ctx"><b>128K</b>context</div></div>
+      </div>
+      <div class="model-card">
+        <div class="tag-row"><span class="badge">Coding</span><span class="params">70B params</span></div>
+        <h4>Codex-Spark</h4>
+        <div class="foot"><div class="speed"><span class="n">2,410</span><span class="u">tok/s</span></div><div class="ctx"><b>64K</b>context</div></div>
+      </div>
+      <div class="model-card">
+        <div class="tag-row"><span class="badge">Multilingual</span><span class="params">235B params</span></div>
+        <h4>Qwen3</h4>
+        <div class="foot"><div class="speed"><span class="n">1,760</span><span class="u">tok/s</span></div><div class="ctx"><b>131K</b>context</div></div>
+      </div>
+      <div class="model-card">
+        <div class="tag-row"><span class="badge">Efficient</span><span class="params">70B params</span></div>
+        <h4>Llama 3.3</h4>
+        <div class="foot"><div class="speed"><span class="n">2,600</span><span class="u">tok/s</span></div><div class="ctx"><b>128K</b>context</div></div>
+      </div>
+    </div>
+    <a href="#" class="btn btn-outline-dark">View model catalog</a>
+  </div>
+</section>
+
+<!-- ═══ GET STARTED ═══ -->
+<section class="section-ink">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <h2>Easy to get started in 30 seconds</h2>
+      <p>OpenAI API compatibility lets developers build on Cerebras with just two code changes.</p>
+    </div>
+    <div class="code-compare reveal">
+      <div class="code-panel">
+        <div class="code-head"><span>Before — OpenAI</span>
+          <button class="copy-btn" data-copy="client = OpenAI(&#10;  api_key=&quot;...&quot;,&#10;  base_url=&quot;api.openai.com/v1&quot;&#10;)&#10;resp = client.chat.completions.create(&#10;  model=&quot;gpt-4&quot;,&#10;  messages=messages&#10;)" aria-label="Copy code">
+            <svg viewBox="0 0 24 24"><path d="M 8.793 0 L 13.101 0 L 18.293 0 L 18.293 2.472 L 2.472 2.472 L 2.472 18.292 L 0 18.292 L 0 13.101 L 0 0 L 4.293 0 L 8.793 0 Z" fill="currentColor" fill-rule="nonzero" transform="matrix(1 0 0 1 0.708 0.708)"/><path d="M 13.101 0 L 8.793 0 L 4.293 0 L 0 0 L 0 13.101 L 0 18.292 L 18.292 18.292 L 18.292 0 L 13.101 0 Z M 15.82 15.82 L 15.82 2.472 L 2.472 2.472 L 2.472 15.82 L 15.82 15.82 Z" fill="currentColor" fill-rule="evenodd" transform="matrix(1 0 0 1 0.708 0.708) matrix(1 0 0 1 4 4)"/></svg>
+          </button>
+        </div>
+<pre>client = OpenAI(
+  api_key=<span>"…"</span>,
+  base_url=<span>"api.openai.com/v1"</span>
+)
+resp = client.chat.completions.create(
+  model=<span>"gpt-4"</span>,
+  messages=messages
+)</pre>
+      </div>
+      <div class="code-panel changed">
+        <div class="code-head"><span>After — Cerebras</span>
+          <button class="copy-btn" data-copy="client = OpenAI(&#10;  api_key=&quot;...&quot;,&#10;  base_url=&quot;api.cerebras.ai/v1&quot;&#10;)&#10;resp = client.chat.completions.create(&#10;  model=&quot;llama-3.3-70b&quot;,&#10;  messages=messages&#10;)" aria-label="Copy code">
+            <svg viewBox="0 0 24 24"><path d="M 8.793 0 L 13.101 0 L 18.293 0 L 18.293 2.472 L 2.472 2.472 L 2.472 18.292 L 0 18.292 L 0 13.101 L 0 0 L 4.293 0 L 8.793 0 Z" fill="currentColor" fill-rule="nonzero" transform="matrix(1 0 0 1 0.708 0.708)"/><path d="M 13.101 0 L 8.793 0 L 4.293 0 L 0 0 L 0 13.101 L 0 18.292 L 18.292 18.292 L 18.292 0 L 13.101 0 Z M 15.82 15.82 L 15.82 2.472 L 2.472 2.472 L 2.472 15.82 L 15.82 15.82 Z" fill="currentColor" fill-rule="evenodd" transform="matrix(1 0 0 1 0.708 0.708) matrix(1 0 0 1 4 4)"/></svg>
+          </button>
+        </div>
+<pre>client = OpenAI(
+  api_key=<span>"…"</span>,
+  base_url=<span class="hl">"api.cerebras.ai/v1"</span>
+)
+resp = client.chat.completions.create(
+  model=<span class="hl">"llama-3.3-70b"</span>,
+  messages=messages
+)</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PRICING / THREE WAYS TO RUN ═══ -->
+<section class="section-paper">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <h2>Three ways to run inference</h2>
+      <p>Transparent pricing designed for everyone — from a weekend prototype to global-scale enterprise.</p>
+    </div>
+    <div class="pricing-grid reveal-stagger">
+      <div class="price-card">
+        <div class="tier-name">Free trial</div>
+        <div class="tier-price">$5 <span>in credit</span></div>
+        <p class="tier-desc">Prototype prompts, agents, and real-time apps before you spend a dollar.</p>
+        <ul class="tier-features">
+          <li><svg viewBox="0 0 24 24"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z" fill="currentColor"/></svg>$5 free credit on signup</li>
+          <li><svg viewBox="0 0 24 24"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z" fill="currentColor"/></svg>Access to all base models</li>
+          <li><svg viewBox="0 0 24 24"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z" fill="currentColor"/></svg>Standard rate limits</li>
+        </ul>
+        <a href="#" class="btn btn-outline-dark">Get API key</a>
+      </div>
+      <div class="price-card featured">
+        <div class="tier-name">Developer</div>
+        <div class="tier-price">Pay per <span>token</span></div>
+        <p class="tier-desc">Self-serve pricing for higher-volume builders, with 10× higher rate limits.</p>
+        <ul class="tier-features">
+          <li><svg viewBox="0 0 24 24"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z" fill="currentColor"/></svg>Add funds starting at $10</li>
+          <li><svg viewBox="0 0 24 24"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z" fill="currentColor"/></svg>10× higher rate limits</li>
+          <li><svg viewBox="0 0 24 24"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z" fill="currentColor"/></svg>Higher priority processing</li>
+        </ul>
+        <a href="#" class="btn btn-white">View pricing</a>
+      </div>
+      <div class="price-card">
+        <div class="tier-name">Enterprise</div>
+        <div class="tier-price">Custom <span>volume</span></div>
+        <p class="tier-desc">Production-scale inference for high-volume applications.</p>
+        <ul class="tier-features">
+          <li><svg viewBox="0 0 24 24"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z" fill="currentColor"/></svg>Dedicated queue priority</li>
+          <li><svg viewBox="0 0 24 24"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z" fill="currentColor"/></svg>Custom model weights</li>
+          <li><svg viewBox="0 0 24 24"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z" fill="currentColor"/></svg>Uptime guarantees &amp; support</li>
+        </ul>
+        <a href="#" class="btn btn-outline-dark">Contact sales</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CUSTOMER STORIES ═══ -->
+<section class="section-cream">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <h2>Customer stories</h2>
+      <p>Builders and enterprises shipping faster, more capable products on Cerebras.</p>
+    </div>
+    <div class="quote-grid reveal-stagger">
+      <div class="quote-card">
+        <div class="quote-mark">"</div>
+        <p class="quote-text">With Cerebras' inference speed, GSK is developing innovative AI applications, such as intelligent research agents, that will fundamentally improve the productivity of our researchers and drug discovery process.</p>
+        <div class="quote-person"><span class="name">Kim Branson</span><span class="role">SVP of AI &amp; ML, GSK</span></div>
+      </div>
+      <div class="quote-card">
+        <div class="quote-mark">"</div>
+        <p class="quote-text">DeepLearning.AI has multiple agentic workflows that require prompting an LLM repeatedly to get a result. Cerebras has built an impressively fast inference capability which will be very helpful to such workloads.</p>
+        <div class="quote-person"><span class="name">Andrew Ng</span><span class="role">Founder, DeepLearning.AI</span></div>
+      </div>
+      <div class="quote-card">
+        <div class="quote-mark">"</div>
+        <p class="quote-text">By delivering over 2,000 tokens per second for Scout — more than 30 times faster than closed models — Cerebras is helping developers everywhere move faster, go deeper, and build better than ever before.</p>
+        <div class="quote-person"><span class="name">Ahmad Al-Dahle</span><span class="role">VP of GenAI, Meta</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FINAL CTA ═══ -->
+<section class="section-cream" style="padding-top:0;">
+  <div class="wrap">
+    <div class="final-cta reveal">
+      <h2>Build the fastest AI products on earth</h2>
+      <p>Get instant access to inference that's up to 15× faster than GPUs. No infrastructure to manage, no waiting on tokens.</p>
+      <div class="final-cta-actions">
+        <a href="#" class="btn btn-white">Get started</a>
+        <a href="#" class="btn btn-outline-light">Talk to sales</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer>
+  <div class="wrap">
+    <div class="footer-newsletter">
+      <div>
+        <h4>Stay ahead of the curve</h4>
+        <p>Model drops, benchmarks, and product news — no spam.</p>
+      </div>
+      <form class="newsletter-form" onsubmit="return false;">
+        <input type="email" placeholder="you@company.com" required>
+        <button type="submit" class="btn btn-white">Subscribe</button>
+      </form>
+    </div>
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="logo-mark">
+          <svg width="100.159" height="24" viewBox="0 0 100.159 24" fill="none"><path class="logo-svg-path" d="M 10.668 16.914 C 11.083 17.029 11.52 17.09 11.971 17.09 C 12.392 17.09 12.801 17.037 13.191 16.937 L 11.298 24 L 8.938 23.368 L 10.668 16.914 Z M 17.366 22.729 L 15.007 23.36 L 13.279 16.913 C 14.12 16.68 14.87 16.228 15.463 15.622 L 17.366 22.729 Z M 8.439 15.58 C 9.02 16.188 9.756 16.646 10.584 16.891 L 5.407 22.067 L 3.68 20.34 L 8.439 15.58 Z M 21.986 18.593 L 20.259 20.32 L 15.511 15.572 C 16.097 14.957 16.524 14.188 16.727 13.333 L 21.986 18.593 Z M 48.192 9.229 C 49.171 9.229 49.834 9.618 50.266 10.237 L 50.295 10.237 L 50.295 9.445 L 52.541 9.445 L 52.541 16.098 C 52.541 17.206 52.152 18.013 51.562 18.546 C 50.914 19.122 49.949 19.366 48.854 19.366 C 46.824 19.366 45.485 18.531 45.255 16.99 L 47.529 16.99 C 47.659 17.379 48.049 17.711 48.826 17.711 C 49.819 17.711 50.237 17.192 50.237 16.3 L 50.237 15.564 L 50.18 15.564 C 49.748 16.054 49.186 16.414 48.293 16.414 C 46.637 16.414 45.096 15.176 45.096 12.915 C 45.096 10.755 46.364 9.229 48.192 9.229 Z M 69.678 9.229 C 71.636 9.229 72.832 10.913 72.832 13.131 C 72.832 15.521 71.55 17.048 69.62 17.048 C 68.67 17.048 67.993 16.674 67.532 16.055 L 67.504 16.055 L 67.504 19.251 L 65.156 19.251 L 65.156 9.445 L 67.402 9.445 L 67.402 10.338 L 67.446 10.338 C 67.95 9.676 68.67 9.229 69.678 9.229 Z M 7.214 13.326 C 7.412 14.168 7.828 14.927 8.399 15.538 L 1.271 17.448 L 0.64 15.089 L 7.214 13.326 Z M 40.811 9.243 C 43.186 9.243 44.741 10.928 44.741 13.146 C 44.741 15.363 43.186 17.048 40.811 17.048 C 38.449 17.048 36.865 15.363 36.865 13.146 C 36.865 10.928 38.449 9.243 40.811 9.243 Z M 57.174 9.243 C 59.55 9.243 61.104 10.928 61.104 13.146 C 61.104 15.363 59.55 17.048 57.174 17.048 C 54.812 17.048 53.229 15.363 53.229 13.146 C 53.229 10.928 54.812 9.243 57.174 9.243 Z M 76.451 9.229 C 78.539 9.229 79.663 10.136 79.778 11.591 L 77.618 11.591 C 77.532 10.929 77.085 10.727 76.438 10.727 C 75.861 10.727 75.415 10.943 75.415 11.403 C 75.415 11.922 76.25 11.994 77.186 12.167 C 78.482 12.383 80.008 12.714 80.008 14.601 C 80.008 16.213 78.583 17.048 76.653 17.048 C 74.493 17.048 73.14 16.055 73.067 14.428 L 75.285 14.428 C 75.372 15.162 75.861 15.521 76.639 15.521 C 77.344 15.521 77.791 15.262 77.791 14.787 C 77.791 14.125 76.898 14.053 75.919 13.88 C 74.637 13.664 73.269 13.319 73.269 11.591 C 73.269 10.036 74.709 9.229 76.451 9.229 Z M 82.938 13.794 C 82.938 14.6 83.297 15.047 84.046 15.047 C 84.852 15.047 85.342 14.442 85.342 13.563 L 85.342 9.445 L 87.689 9.445 L 87.689 16.817 L 85.443 16.817 L 85.443 15.91 L 85.399 15.91 C 84.867 16.63 84.219 17.033 83.196 17.033 C 81.497 17.033 80.604 15.925 80.604 14.283 L 80.604 9.445 L 82.938 9.445 L 82.938 13.794 Z M 31.925 14.657 L 36.547 14.657 L 36.547 16.817 L 29.376 16.817 L 29.376 6.521 L 31.925 6.521 L 31.925 14.657 Z M 64.138 16.817 L 61.791 16.817 L 61.791 9.445 L 64.138 9.445 L 64.138 16.817 Z M 97.653 9.229 C 99.324 9.229 100.159 10.367 100.159 12.022 L 100.159 16.817 L 97.812 16.817 L 97.812 12.44 C 97.812 11.648 97.48 11.188 96.774 11.188 C 96.026 11.188 95.609 11.806 95.608 12.685 L 95.608 16.817 L 93.261 16.817 L 93.261 12.44 C 93.261 11.649 92.93 11.188 92.225 11.188 C 91.49 11.188 91.058 11.806 91.058 12.685 L 91.058 16.817 L 88.711 16.817 L 88.711 9.445 L 90.957 9.445 L 90.957 10.496 L 91 10.496 C 91.461 9.733 92.167 9.229 93.232 9.229 C 94.197 9.229 94.931 9.733 95.306 10.525 L 95.335 10.525 C 95.911 9.633 96.703 9.229 97.653 9.229 Z M 40.796 10.899 C 39.774 10.899 39.241 11.806 39.241 13.146 C 39.241 14.485 39.774 15.378 40.796 15.378 C 41.818 15.378 42.365 14.485 42.365 13.146 C 42.365 11.806 41.818 10.899 40.796 10.899 Z M 57.159 10.899 C 56.137 10.9 55.605 11.807 55.604 13.146 C 55.604 14.485 56.137 15.378 57.159 15.378 C 58.182 15.378 58.729 14.485 58.729 13.146 C 58.729 11.806 58.182 10.899 57.159 10.899 Z M 68.973 11.115 C 67.95 11.115 67.432 12.023 67.432 13.218 C 67.432 14.413 68.008 15.233 69.016 15.233 C 69.908 15.233 70.456 14.471 70.456 13.218 C 70.456 11.951 69.98 11.115 68.973 11.115 Z M 15.056 0.632 L 13.285 7.24 L 18.511 2.014 L 20.238 3.741 L 15.407 8.573 L 22.646 6.634 L 23.279 8.993 L 16.679 10.762 L 23.919 12.701 L 23.286 15.062 L 16.732 13.306 C 16.814 12.952 16.857 12.583 16.857 12.204 C 16.857 9.506 14.669 7.317 11.971 7.317 C 9.272 7.318 7.085 9.506 7.085 12.204 C 7.085 12.585 7.128 12.956 7.211 13.313 L 0 11.38 L 0.632 9.021 L 7.232 10.789 L 1.933 5.489 L 3.66 3.762 L 8.491 8.593 L 6.552 1.354 L 8.912 0.722 L 10.707 7.422 L 12.695 0 L 15.056 0.632 Z M 48.84 11 C 47.962 11 47.386 11.721 47.386 12.844 C 47.386 13.952 47.962 14.672 48.84 14.672 C 49.862 14.672 50.338 13.866 50.338 12.829 C 50.338 11.835 49.819 11 48.84 11 Z M 64.138 8.423 L 61.791 8.423 L 61.791 6.521 L 64.138 6.521 L 64.138 8.423 Z" fill-rule="nonzero"></path></svg>
+        </div>
+        <p>The Cerebras Wafer-Scale Engine is purpose-built for ultra-fast AI, powering the world's fastest inference cloud.</p>
+      </div>
+      <div class="footer-col">
+        <h5>Product</h5>
+        <ul><li><a href="#">Inference</a></li><li><a href="#">Training</a></li><li><a href="#">Pricing</a></li><li><a href="#">Model catalog</a></li></ul>
+      </div>
+      <div class="footer-col">
+        <h5>Developers</h5>
+        <ul><li><a href="#">Documentation</a></li><li><a href="#">API reference</a></li><li><a href="#">Quickstart</a></li><li><a href="#">Status</a></li></ul>
+      </div>
+      <div class="footer-col">
+        <h5>Company</h5>
+        <ul><li><a href="#">About</a></li><li><a href="#">Careers</a></li><li><a href="#">Newsroom</a></li><li><a href="#">Contact</a></li></ul>
+      </div>
+      <div class="footer-col">
+        <h5>Resources</h5>
+        <ul><li><a href="#">Blog</a></li><li><a href="#">Benchmarks</a></li><li><a href="#">Customers</a></li><li><a href="#">Partners</a></li></ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Cerebras Systems Inc.</span>
+      <span>Privacy · Terms · Security</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Hero bars grow on load
+  window.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.hero-bar').forEach((bar, i) => {
+      setTimeout(() => {
+        bar.style.height = bar.dataset.h + '%';
+        bar.classList.add('grow');
+      }, 300 + i * 90);
+    });
+  });
+
+  // Demo tab switching — swaps prompt/speed/output content
+  const demoData = [
+    { task: "\"Solve this Humanity's Last Exam question and show your reasoning.\"", speed: "2,847", code: "&gt; Analyzing problem structure...<br>&gt; Cross-referencing constraints...<br>&gt; Reasoning chain established.<br>&gt; Verifying against edge cases...<br>&gt; Answer: confirmed, step 7 of 7.<br>&gt; Response complete — 0.9s." },
+    { task: "\"Build a financial dashboard with live P&amp;L, cash flow, and variance charts.\"", speed: "2,100", code: "&gt; Scaffolding layout grid...<br>&gt; Wiring chart components...<br>&gt; Connecting mock data feed...<br>&gt; Formatting currency &amp; deltas...<br>&gt; Dashboard rendered, 4 panels.<br>&gt; Response complete — 1.4s." },
+    { task: "\"Create a playable pool game in a single HTML file, no dependencies.\"", speed: "1,980", code: "&gt; Setting up canvas &amp; physics loop...<br>&gt; Placing balls on the rack...<br>&gt; Implementing cue &amp; collision logic...<br>&gt; Adding pocket detection...<br>&gt; Game loop stable at 60fps.<br>&gt; Response complete — 1.1s." },
+    { task: "\"Clone core Salesforce CRM flows: leads, pipeline, and contact records.\"", speed: "2,410", code: "&gt; Modeling lead &amp; contact schema...<br>&gt; Building pipeline kanban view...<br>&gt; Wiring CRUD endpoints...<br>&gt; Adding stage-change automation...<br>&gt; Scaffold complete, 6 views.<br>&gt; Response complete — 1.6s." },
+  ];
+  const tabs = document.querySelectorAll('.demo-tab');
+  const taskEl = document.getElementById('demoTask');
+  const speedEl = document.getElementById('demoSpeed');
+  const codeEl = document.getElementById('demoCode');
+  tabs.forEach(tab => tab.addEventListener('click', () => {
+    tabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const d = demoData[+tab.dataset.idx];
+    if (d) { taskEl.innerHTML = d.task; speedEl.textContent = d.speed; codeEl.innerHTML = d.code; }
+  }));
+
+  // Mobile nav
+  const burgerBtn = document.getElementById('burgerBtn');
+  const mobileMenu = document.getElementById('mobileMenu');
+  burgerBtn.addEventListener('click', () => mobileMenu.classList.toggle('open'));
+  mobileMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mobileMenu.classList.remove('open')));
+
+  // Copy-to-clipboard
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(btn.dataset.copy);
+        btn.classList.add('copied');
+        setTimeout(() => btn.classList.remove('copied'), 1400);
+      } catch (e) {}
+    });
+  });
+
+  // Scroll reveal (fade/slide-in) + speed-row leaderboard fill-in
+  const revealEls = document.querySelectorAll('.reveal, .reveal-stagger, .speed-row');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in');
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  revealEls.forEach(el => io.observe(el));
+</script>
+
+</body>
+</html>
